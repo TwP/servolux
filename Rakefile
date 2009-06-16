@@ -16,7 +16,7 @@ end
 ensure_in_path 'lib'
 require 'servolux'
 
-task :default => 'spec:run'
+task :default => 'spec:specdoc'
 
 PROJ.name = 'servolux'
 PROJ.authors = 'Tim Pease'
