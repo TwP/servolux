@@ -1,5 +1,6 @@
 
-#
+# The Daemon takes care of the work of creating and managing daemon
+# processes from with Ruby.
 #
 class Servolux::Daemon
 
@@ -18,19 +19,71 @@ class Servolux::Daemon
   attr_reader   :log_file
   attr_reader   :look_for
 
+  # Create a new Daemon that will manage the +startup_command+ as a deamon
+  # process.
   #
+  # ==== Required
+  # * name <String>
+  #     The name of the daemon process. This name will appear in log
+  #     messages.
+  #  
+  # * logger <Logger>
+  #     The Logger instance used to output messages.
+  #
+  # * pid_file <String>
+  #     Location of the PID file. This is used to determine if the daemon
+  #     process is running, and to send signals to the daemon process.
+  #
+  # * startup_command
+  #     Assign the startup command. This can be either a String, an Array of
+  #     strings, a Proc, a bound Method, or a Servolux::Server instance.
+  #     Different calling semantics are used for each type of command. See
+  #     the setter method for more details.
+  #
+  # ==== Options
+  #
+  # * timeout <Numeric>
+  #     The time (in seconds) to wait for the daemon process to either
+  #     startup or shutdown. An error is raised when this timeout is
+  #     exceeded. The default is 30 seconds.
+  #
+  # * nochdir <Boolean>
+  #     When set to true this flag directs the daemon process to keep the
+  #     current working directory. By default, the process of daemonizing
+  #     will cause the current working directory to be changed to the root
+  #     folder (thus preventing the daemon process from holding onto the
+  #     directory inode). The default is false.
+  #
+  # * noclose <Boolean>
+  #     When set to true this flag keeps the standard input/output streams
+  #     from being reopend to /dev/null when the deamon process is created.
+  #     Reopening the standard input/output streams frees the file
+  #     descriptors which are still being used by the parent process. This
+  #     prevents zombie processes. The default is false.
+  #
+  # * shutdown_command
+  #     TODO: Not Yet Implemented
+  #
+  # * log_file <String>
+  #     This log file will be monitored to determine if the daemon process
+  #     has sucessfully started.
+  #
+  # * look_for
+  #     This can be either a String or a Regexp. It defines a phrase to
+  #     search for in the log_file. When the daemon process is started, the
+  #     parent process will not return until this phrase is found in the log
+  #     file. This is a useful check for determining if the daemon process
+  #     is fully started. The default is nil.
   #
   def initialize( opts = {} )
-    self.server = opts[:server]
+    self.server = opts.getopt(:server) || opts.getopt(:startup_command)
 
-    @name = opts[:name] if opts.key?(:name)
-    @logger = opts[:logger] if opts.key?(:logger)
+    @name     = opts[:name]     if opts.key?(:name)
+    @logger   = opts[:logger]   if opts.key?(:logger)
     @pid_file = opts[:pid_file] if opts.key?(:pid_file)
-    @startup_command = opts[:startup_command] if opts.key?(:startup_command)
-
-    @timeout = opts.getopt(:timeout, 30)
-    @nochdir = opts.getopt(:nochdir, false)
-    @noclose = opts.getopt(:noclose, false)
+    @timeout  = opts.getopt(:timeout, 30)
+    @nochdir  = opts.getopt(:nochdir, false)
+    @noclose  = opts.getopt(:noclose, false)
     @shutdown_command = opts.getopt(:shutdown_command)
 
     @logfile_reader = nil
@@ -45,7 +98,21 @@ class Servolux::Daemon
     raise Error, "These variables are required: #{ary.join(', ')}." unless ary.empty?
   end
 
+  # Assign the startup command. This can be either a String, an Array of
+  # strings, a Proc, a bound Method, or a Servolux::Server instance.
+  # Different calling semantics are used for each type of command.
   #
+  # If the startup command is a String or an Array of strings, then
+  # Kernel#exec is used to run the command. Therefore, the string (or array)
+  # should be system level command that is either fully qualified or can be
+  # found on the current environment path.
+  #
+  # If the startup command is a Proc or a bound Method then it is invoked
+  # using the +call+ method on the object. No arguments are passed to the
+  # +call+ invocoation.
+  #
+  # Lastly, if the startup command is a Servolux::Server then it's +startup+
+  # method is called.
   #
   def startup_command=( val )
     @startup_command = val
@@ -59,7 +126,8 @@ class Servolux::Daemon
   alias :server= :startup_command=
   alias :server  :startup_command
 
-  #
+  # Assign the log file name. This log file will be monitored to determine
+  # if the daemon process is running.
   #
   def log_file=( filename )
     return if filename.nil?
@@ -67,7 +135,13 @@ class Servolux::Daemon
     @logfile_reader.filename = filename
   end
 
+  # A string or regular expression to search for in the log file. When the
+  # daemon process is started, the parent process will not return until this
+  # phrase is found in the log file. This is a useful check for determining
+  # if the daemon process is fully started.
   #
+  # If no phrase is given to look for, then the log file will simply be
+  # watched for a change in size and a modified timestamp.
   #
   def look_for=( val )
     return if val.nil?
@@ -75,7 +149,7 @@ class Servolux::Daemon
     @logfile_reader.look_for = val
   end
 
-  # Start the Server either in the foreground or as a daemonized process.
+  # Start the daemon process.
   #
   def startup
     raise Error, "Fork is not supported in this Ruby environment." unless ::Servolux.fork?
@@ -89,8 +163,9 @@ class Servolux::Daemon
     daemonize
   end
 
-  # Returns +true+ if the Maestro server is currently running. Returns
-  # +false+ if this is not the case.
+  # Returns +true+ if the daemon processis currently running. Returns
+  # +false+ if this is not the case. The status of the process is determined
+  # by sending a signal to the process identified by the +pid_file+.
   #
   def alive?
     pid = retrieve_pid
@@ -104,14 +179,9 @@ class Servolux::Daemon
     false
   end
 
-  # Send a signal to the server identified by the PID file. The default
-  # signal to send is 'INT' (2). The signal can be given either as a
+  # Send a signal to the daemon process identified by the PID file. The
+  # default signal to send is 'INT' (2). The signal can be given either as a
   # string or a signal number.
-  #
-  #   No |  Name     |   Default Action    |  Description
-  #   ---+-----------+---------------------+------------------------------
-  #   2     SIGINT       terminate process    interrupt program
-  #   15    SIGTERM      terminate process    software termination signal
   #
   def kill( signal = 'INT' )
     signal = Signal.list.invert[signal] if signal.is_a?(Integer)
@@ -139,11 +209,12 @@ class Servolux::Daemon
     end
   end
 
-  #
+  # Returns the logger instance used by the daemon to log messages.
   #
   def logger
     @logger ||= Logging.logger[self]
   end
+
 
   private
 
@@ -152,7 +223,7 @@ class Servolux::Daemon
     if fork                              # Parent process
       wait_for_startup
       logger.info 'Server has daemonized.'
-      exit(0)
+      exit!(0)
     else                                 # Child process
       Process.setsid                     # Become session leader.
       exit!(0) if fork                   # Zap session leader.
@@ -263,7 +334,6 @@ class Servolux::Daemon
   end
 
   class LogfileReader
-
     attr_accessor :filename
     attr_reader   :look_for
 
@@ -303,7 +373,6 @@ class Servolux::Daemon
     ensure
       @stat = s
     end
-
   end  # class LogfileReader
 
 end  # class Servolux::Daemon

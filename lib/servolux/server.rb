@@ -22,10 +22,10 @@ class Servolux::Server
   # loop at the configured interval.
   #
   # ==== Options
-  # *logger<Logger> :: The logger instance this server will use
-  # *pid_file<String> :: Location of the PID file
-  # *signals<Array> :: A list of signals that will shutdown the server
-  # *interval<Numeric> :: Sleep interval between invocations of the _block_
+  # * logger <Logger> :: The logger instance this server will use
+  # * pid_file <String> :: Location of the PID file
+  # * signals <Array> :: A list of signals that will shutdown the server
+  # * interval <Numeric> :: Sleep interval between invocations of the _block_
   #
   def initialize( name, opts = {}, &block )
     @name = name
