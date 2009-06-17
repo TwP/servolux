@@ -86,6 +86,7 @@ class Servolux::Daemon
     @noclose  = opts.getopt(:noclose, false)
     @shutdown_command = opts.getopt(:shutdown_command)
 
+    @piper = nil
     @logfile_reader = nil
     self.log_file = opts.getopt(:log_file)
     self.look_for = opts.getopt(:look_for)
@@ -220,25 +221,15 @@ class Servolux::Daemon
 
   def daemonize
     logger.debug "About to fork ..."
-    if fork                              # Parent process
+
+    @piper = ::Servolux::Piper.daemon(nochdir, noclose)
+
+    @piper.parent {
       wait_for_startup
-      logger.info 'Server has daemonized.'
       exit!(0)
-    else                                 # Child process
-      Process.setsid                     # Become session leader.
-      exit!(0) if fork                   # Zap session leader.
+    }
 
-      Dir.chdir '/' unless nochdir       # Release old working directory.
-      File.umask 0000                    # Ensure sensible umask.
-
-      unless noclose
-        STDIN.reopen  '/dev/null'        # Free file descriptors and
-        STDOUT.reopen '/dev/null', 'a'   # point them somewhere sensible.
-        STDERR.reopen '/dev/null', 'a'
-      end
-
-      run_startup_command
-    end
+    @piper.child { run_startup_command }
   end
 
   def run_startup_command
@@ -250,13 +241,19 @@ class Servolux::Daemon
     else
       raise Error, "Unrecognized startup command #{startup_command.inspect}"
     end
+
   rescue Exception => err
-    logger.fatal err unless err.is_a?(SystemExit)
+    unless err.is_a?(SystemExit)
+     logger.fatal err
+      @piper.puts err
+    end
+  ensure
+    @piper.close
   end
 
   def exec( *args )
     logger.debug "Calling: exec(*#{args.inspect})"
-    std = [STDIN, STDOUT, STDERR]
+    std = [STDIN, STDOUT, STDERR, @piper.write_io]
     ObjectSpace.each_object(IO) { |obj|
       next if std.include? obj
       obj.close rescue nil
@@ -265,7 +262,7 @@ class Servolux::Daemon
   end
 
   def retrieve_pid
-    Integer(File.read(pid_file).strip)
+    @piper ? @piper.pid : Integer(File.read(pid_file).strip)
   rescue TypeError
     raise Error, "A PID file was not specified."
   end
@@ -278,9 +275,30 @@ class Servolux::Daemon
 
   def wait_for_startup
     logger.debug "Waiting for #{name.inspect} to startup."
-    return if wait_for { started? }
+
+    begin
+      started = wait_for {
+        rv = started?
+        err = @piper.gets; raise err unless err.nil?
+        rv
+      }
+
+      if started
+        logger.info 'Server has daemonized.'
+        return
+      end
+    rescue Exception => err
+      child_err = @piper.gets
+      raise child_err || err
+    ensure
+      @piper.close
+    end
 
     # if the daemon doesn't fork into the background in time, then kill it.
+    force_kill
+  end
+
+  def force_kill
     pid = retrieve_pid
 
     t = Thread.new {
