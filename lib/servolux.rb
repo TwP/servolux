@@ -42,7 +42,7 @@ module Servolux
 
 end  # module Servolux
 
-%w[threaded server daemon].each do |lib|
+%w[threaded server piper daemon].each do |lib|
   require Servolux.libpath('servolux', lib)
 end
 
