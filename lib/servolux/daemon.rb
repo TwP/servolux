@@ -265,6 +265,8 @@ class Servolux::Daemon
     @piper ? @piper.pid : Integer(File.read(pid_file).strip)
   rescue TypeError
     raise Error, "A PID file was not specified."
+  rescue ArgumentError
+    raise Error, "#{pid_file.inspect} does not contain a valid PID."
   end
 
   def started?

@@ -3,16 +3,29 @@
 # Ruby. A server in this context is any process that should run for a long
 # period of time either in the foreground or as a daemon process.
 #
+# Use by inheritance.
+#
+# Use by extending.
+#
+# Use by block/proc.
+#
+# Use by class << self.
+#
+# Handling signals.
 #
 class Servolux::Server
   include ::Servolux::Threaded
+
+  # :stopdoc:
+  SIGNALS = %w[HUP INT TERM USR1 USR2] & Signal.list.keys
+  SIGNALS.each {|sig| sig.freeze}.freeze
+  # :startdoc:
 
   Error = Class.new(::Servolux::Error)
 
   attr_reader   :name
   attr_writer   :logger
   attr_writer   :pid_file
-  attr_accessor :signals
 
   # call-seq:
   #    Server.new( name, options = {} ) { block }
@@ -24,7 +37,6 @@ class Servolux::Server
   # ==== Options
   # * logger <Logger> :: The logger instance this server will use
   # * pid_file <String> :: Location of the PID file
-  # * signals <Array> :: A list of signals that will shutdown the server
   # * interval <Numeric> :: Sleep interval between invocations of the _block_
   #
   def initialize( name, opts = {}, &block )
@@ -32,7 +44,6 @@ class Servolux::Server
 
     self.logger   = opts.getopt :logger
     self.pid_file = opts.getopt :pid_file
-    self.signals  = opts.getopt :signals, %w[INT TERM], :as => Array
     self.interval = opts.getopt :interval, 0
 
     if block
@@ -66,7 +77,9 @@ class Servolux::Server
     return self
   end
 
-  alias :shutdown :stop
+  alias :shutdown :stop     # for symmetry with the startup method
+  alias :int :stop          # handles the INT signal
+  alias :term :stop         # handles the TERM signal
   private :start, :stop
 
   # Returns the logger instance used by the server. If none was given, then
@@ -85,6 +98,7 @@ class Servolux::Server
   end
 
   private
+
   def create_pid_file
     logger.debug "Server #{name.inspect} creating pid file #{pid_file.inspect}"
     File.open(pid_file, 'w') {|fd| fd.write(Process.pid.to_s)}
@@ -98,8 +112,9 @@ class Servolux::Server
   end
 
   def trap_signals
-    signals.each do |sig|
-      Signal.trap(sig) { self.shutdown rescue nil }
+    SIGNALS.each do |sig|
+      m = sig.downcase.to_sym
+      Signal.trap(sig) { self.send(m) rescue nil } if self.respond_to? m
     end
   end
 
