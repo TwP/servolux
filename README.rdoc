@@ -1,10 +1,10 @@
 Servolux
-    by FIXME (your name)
-    FIXME (url)
+    by Tim Pease
+    http://codeforpeople.rubyforge.org/servolux
 
 == DESCRIPTION:
 
-FIXME (describe your package)
+Threads : Servers : Forks : Daemons
 
 == FEATURES/PROBLEMS:
 
@@ -20,13 +20,13 @@ FIXME (describe your package)
 
 == INSTALL:
 
-* FIXME (sudo gem install, anything else)
+gem install servolux
 
 == LICENSE:
 
 (The MIT License)
 
-Copyright (c) 2008 FIXME (different license?)
+Copyright (c) 2009
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
