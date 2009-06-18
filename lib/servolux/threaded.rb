@@ -1,6 +1,36 @@
 
+# == Synopsis
 # The Threaded module is used to peform some activity at a specified
 # interval.
+#
+# == Details
+# Sometimes it is useful for an object to have its own thread of execution
+# to perform a task at a recurring interval. The Threaded module
+# encapsulates this functionality so you don't have to write it yourself. It
+# can be used with any object that responds to the +run+ method.
+#
+# The threaded object is run by calling the +start+ method. This will create
+# a new thread that will invoke the +run+ method at the desired interval.
+# Just before the thread is created the +before_starting+ method will be
+# called (if it is defined by the threaded object). Likewise, after the
+# thread is created the +after_starting+ method will be called (if it is
+# defeined by the threaded object).
+#
+# The threaded object is stopped by calling the +stop+ method. This sets an
+# internal flag and then wakes up the thread. The thread gracefully exits
+# after checking the flag. Like the start method, before and after methods
+# are defined for stopping as well. Just before the thread is stopped the
+# +before_stopping+ method will be called (if it is defined by the threaded
+# object). Likewise, after the thread has died the +after_stopping+ method
+# will be called (if it is defeined by the threaded object).
+#
+# Calling the +join+ method on a threaded object will cause the calling
+# thread to wait until the threaded object has stopped. An optional timeout
+# parameter can be given.
+#
+# == Examples
+# Take a look at the Servolux::Server class for an example of a threaded
+# object.
 #
 module Servolux::Threaded
 
