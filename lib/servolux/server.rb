@@ -16,8 +16,8 @@
 # too). A few other signals can be handled by defining a few methods on your
 # server instance. For example, SIGINT is hanlded by the +int+ method (an
 # alias for +shutdown+). Likewise, SIGTERM is handled by the +term+ method
-# (another alias for +shutdown+). The following signal methods can be
-# supplied:
+# (another alias for +shutdown+). The following signal methods are
+# recognized by the Server class:
 #
 #    Method  |  Signal  |  Default Action
 #    --------+----------+----------------
@@ -27,7 +27,7 @@
 #    usr1       SIGUSR1    none
 #    usr2       SIGUSR2    none
 #
-# In order to handle SIGUSR1 you would define a +usr1+ method for your
+# In order to handle SIGUSR1 you would define a <tt>usr1</tt> method for your
 # server.
 #
 # There are a few other methods that are useful and should be mentioned. Two

@@ -353,6 +353,7 @@ class Servolux::Daemon
     end
   end
 
+  # :stopdoc:
   class LogfileReader
     attr_accessor :filename
     attr_reader   :look_for
@@ -394,6 +395,7 @@ class Servolux::Daemon
       @stat = s
     end
   end  # class LogfileReader
+  # :startdoc:
 
 end  # class Servolux::Daemon
 
