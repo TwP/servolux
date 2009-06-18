@@ -1,4 +1,5 @@
 
+# == Synopsis
 # The Daemon takes care of the work of creating and managing daemon
 # processes from with Ruby.
 #
@@ -9,7 +10,7 @@ class Servolux::Daemon
   AlreadyStarted = Class.new(Error)
 
   attr_reader   :name
-  attr_accessor :logger
+  attr_writer   :logger
   attr_accessor :pid_file
   attr_reader   :startup_command
   attr_accessor :shutdown_command

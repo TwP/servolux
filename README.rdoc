@@ -1,28 +1,28 @@
-Servolux
-    by Tim Pease
-    http://codeforpeople.rubyforge.org/servolux
+= Serv-O-Lux
+* by Tim Pease
+* http://codeforpeople.rubyforge.org/servolux
 
-== DESCRIPTION:
+=== DESCRIPTION:
 
 Threads : Servers : Forks : Daemons
 
-== FEATURES/PROBLEMS:
+=== FEATURES/PROBLEMS:
 
 * FIXME (list of features or problems)
 
-== SYNOPSIS:
+=== SYNOPSIS:
 
   FIXME (code sample of usage)
 
-== REQUIREMENTS:
+=== REQUIREMENTS:
 
 * FIXME (list of requirements)
 
-== INSTALL:
+=== INSTALL:
 
 gem install servolux
 
-== LICENSE:
+=== LICENSE:
 
 (The MIT License)
 
