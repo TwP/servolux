@@ -60,7 +60,7 @@ module Servolux::Threaded
     @activity_thread = Thread.new {
       begin
         loop {
-          sleep interval
+          sleep interval if running?
           break unless running?
           run
         }
@@ -84,8 +84,8 @@ module Servolux::Threaded
     return self unless running?
     logger.debug "Stopping"
 
-    before_stopping if self.respond_to?(:before_stopping)
     @activity_thread_running = false
+    before_stopping if self.respond_to?(:before_stopping)
     @activity_thread.wakeup
     @activity_thread.join
     @activity_thread = nil

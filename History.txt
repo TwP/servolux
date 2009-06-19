@@ -1,4 +1,11 @@
+== 0.2.0 / 2009-06-19
+
+* 1 Minor Enhancement
+  * Added a signal method to the Piper class for signaling the child
+* 1 bug fix
+  * Fixed a race condition in the Threaded#stop method
+
 == 0.1.0 / 2009-06-18
 
-* 1 major enhancement
+* 1 Major Enhancement
   * Birthday!

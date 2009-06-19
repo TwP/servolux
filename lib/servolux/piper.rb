@@ -269,6 +269,18 @@ class Servolux::Piper
     bytes
   end
 
+  # Send the given signal to the child process. The signal may be an integer
+  # signal number or a POSIX signal name (either with or without a +SIG+
+  # prefix). 
+  #
+  # This method does nothing when called from the child process.
+  #
+  def signal( sig )
+    return if @child_pid.nil?
+    sig = Signal.list.invert[sig] if sig.is_a?(Integer)
+    Process.kill(sig, @child_pid)
+  end
+
 end  # class Servolux::Piper
 
 # EOF

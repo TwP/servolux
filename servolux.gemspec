@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{servolux}
-  s.version = "0.1.0"
+  s.version = "0.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Tim Pease"]
-  s.date = %q{2009-06-18}
+  s.date = %q{2009-06-19}
   s.description = %q{Threads : Servers : Forks : Daemons}
   s.email = %q{tim.pease@gmail.com}
   s.extra_rdoc_files = ["History.txt", "README.rdoc"]
