@@ -9,6 +9,8 @@ require 'spec/logging_helper'
 require File.expand_path(
     File.join(File.dirname(__FILE__), %w[.. lib servolux]))
 
+include Logging.globally
+
 Spec::Runner.configure do |config|
   include Spec::LoggingHelper
   config.capture_log_messages
