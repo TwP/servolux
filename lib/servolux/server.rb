@@ -99,6 +99,7 @@
 #
 #    module DebugSignal
 #      def usr1
+#        @old_log_level ||= nil
 #        if @old_log_level
 #          logger.level = @old_log_level
 #          @old_log_level = nil
@@ -127,7 +128,7 @@ class Servolux::Server
   Error = Class.new(::Servolux::Error)
 
   attr_reader   :name
-  attr_writer   :logger
+  attr_accessor :logger
   attr_writer   :pid_file
 
   # call-seq:
@@ -144,6 +145,7 @@ class Servolux::Server
   #
   def initialize( name, opts = {}, &block )
     @name = name
+    @activity_thread_running = false
 
     self.logger   = opts.getopt :logger
     self.pid_file = opts.getopt :pid_file
@@ -184,14 +186,6 @@ class Servolux::Server
   alias :int :stop          # handles the INT signal
   alias :term :stop         # handles the TERM signal
   private :start, :stop
-
-  # Returns the logger instance used by the server. If none was given, then
-  # a logger is created from the Logging framework (see the Logging rubygem
-  # for more information).
-  #
-  def logger
-    @logger ||= Logging.logger[self]
-  end
 
   # Returns the PID file name used by the server. If none was given, then
   # the server name is used to create a PID file name.

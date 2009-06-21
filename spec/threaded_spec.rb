@@ -4,14 +4,14 @@ require File.join(File.dirname(__FILE__), %w[spec_helper])
 describe Servolux::Threaded do
 
   base = Class.new do
-      include Servolux::Threaded
-      def initialize
-        @activity_thread_running = false
-        @activity_thread_interval = 0
-      end
-      def pass( status = 'sleep' )
-        Thread.pass until @activity_thread.status == status
-      end
+    include Servolux::Threaded
+    def initialize
+      @activity_thread_running = false
+      @activity_thread_interval = 0
+    end
+    def pass( status = 'sleep' )
+      Thread.pass until @activity_thread.status == status
+    end
   end
 
   it "let's you know that it is running" do
