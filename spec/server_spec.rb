@@ -40,7 +40,7 @@ describe Servolux::Server do
     @server.running?.should be_false
   end
 
-  it 'responds to signals that have handlers defined' do
+  it 'responds to signals that have defined handlers' do
     class << @server
       def hup() logger.info 'hup was called'; end
       def usr1() logger.info 'usr1 was called'; end
