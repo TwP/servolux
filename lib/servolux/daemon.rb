@@ -3,6 +3,9 @@
 # The Daemon takes care of the work of creating and managing daemon
 # processes from with Ruby.
 #
+# == Details
+#
+#
 class Servolux::Daemon
 
   Error          = Class.new(StandardError)
@@ -165,6 +168,26 @@ class Servolux::Daemon
     daemonize
   end
 
+  # Stop the daemon process. If a shutdown command has been defined, it will
+  # be called to stop the daemon process. Otherwise, SIGINT will be sent to
+  # the daemon process to terminate it.
+  #
+  def shutdown
+    return unless alive?
+
+    case shutdown_command
+    when nil; kill
+    when String; exec(shutdown_command)
+    when Array; exec(*shutdown_command)
+    when Proc, Method; shutdown_command.call
+    when ::Servolux::Server; shutdown_command.shutdown
+    else
+      raise Error, "Unrecognized shutdown command #{shutdown_command.inspect}"
+    end
+
+    wait_for_shutdown
+  end
+
   # Returns +true+ if the daemon processis currently running. Returns
   # +false+ if this is not the case. The status of the process is determined
   # by sending a signal to the process identified by the +pid_file+.
@@ -190,7 +213,6 @@ class Servolux::Daemon
     pid = retrieve_pid
     logger.info "Killing PID #{pid} with #{signal}"
     Process.kill(signal, pid)
-    wait_for_shutdown
   rescue Errno::EINVAL
     logger.error "Failed to kill PID #{pid} with #{signal}: " \
                  "'#{signal}' is an invalid or unsupported signal number."
@@ -245,7 +267,7 @@ class Servolux::Daemon
 
   rescue Exception => err
     unless err.is_a?(SystemExit)
-     logger.fatal err
+      logger.fatal err
       @piper.puts err
     end
   ensure
@@ -254,9 +276,10 @@ class Servolux::Daemon
 
   def exec( *args )
     logger.debug "Calling: exec(*#{args.inspect})"
-    std = [STDIN, STDOUT, STDERR, @piper.write_io]
+    skip = [STDIN, STDOUT, STDERR]
+    skip << @piper.write_io if @piper
     ObjectSpace.each_object(IO) { |obj|
-      next if std.include? obj
+      next if skip.include? obj
       obj.close rescue nil
     }
     Kernel.exec(*args)
