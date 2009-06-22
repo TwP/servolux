@@ -1,6 +1,8 @@
 
 require File.join(File.dirname(__FILE__), %w[spec_helper])
 
+if Servolux.fork?
+
 describe Servolux::Piper do
 
   before :each do
@@ -89,5 +91,6 @@ describe Servolux::Piper do
   end
 
 end
+end  # if Servolux.fork?
 
 # EOF

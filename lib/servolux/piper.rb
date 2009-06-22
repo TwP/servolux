@@ -83,7 +83,7 @@ class Servolux::Piper
 
       piper.puts Process.pid
     }
-    piper
+    return piper
   end
 
   # The timeout in seconds to wait for puts / gets commands.
