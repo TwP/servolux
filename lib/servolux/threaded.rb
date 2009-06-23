@@ -64,9 +64,10 @@ module Servolux::Threaded
           break unless running?
           run
         }
-      rescue Exception => e
+      rescue Exception => err
         @activity_thread_running = false
-        logger.fatal e
+        logger.fatal err unless err.is_a?(SystemExit)
+        raise err
       end
     }
     after_starting if self.respond_to?(:after_starting)
@@ -103,10 +104,8 @@ module Servolux::Threaded
   # with +nil+.
   #
   def join( limit = nil )
-    @activity_thread.join limit
-    self
-  rescue NoMethodError
-    return self
+    return if @activity_thread.nil?
+    @activity_thread.join(limit) ? self : nil
   end
 
   # Returns +true+ if the activity thread is running. Returns +false+
@@ -114,6 +113,22 @@ module Servolux::Threaded
   #
   def running?
     @activity_thread_running
+  end
+
+  # Returns the status of threaded object.
+  #
+  #    'sleep'    : sleeping or waiting on I/O
+  #    'run'      : executing
+  #    'aborting' : aborting
+  #    false      : not started or terminated normally
+  #    nil        : terminated with an exception
+  #
+  # If this method returns +nil+, then calling join on the threaded object
+  # will cause the exception to be raised in the calling thread.
+  #
+  def status
+    return false if @activity_thread.nil?
+    @activity_thread.status
   end
 
   # Sets the number of seconds to sleep between invocations of the

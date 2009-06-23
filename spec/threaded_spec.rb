@@ -9,8 +9,8 @@ describe Servolux::Threaded do
       @activity_thread_running = false
       @activity_thread_interval = 0
     end
-    def pass( status = 'sleep' )
-      Thread.pass until @activity_thread.status == status
+    def pass( val = 'sleep' )
+      Thread.pass until status == val
     end
   end
 
@@ -81,20 +81,24 @@ describe Servolux::Threaded do
     obj = klass.new
 
     obj.start
-    obj.pass false
+    obj.pass nil
 
     obj.running?.should be_false
     @log_output.readline
     @log_output.readline.chomp.should == "FATAL  Object : <RuntimeError> ni"
+
+    lambda { obj.join }.should raise_error(RuntimeError, 'ni')
   end
 
   it "complains loudly if you don't have a run method" do
     obj = base.new
     obj.start
-    obj.pass false
+    obj.pass nil
 
     @log_output.readline
     @log_output.readline.chomp.should == "FATAL  Object : <NotImplementedError> The run method must be defined by the threaded object."
+
+    lambda { obj.join }.should raise_error(NotImplementedError, 'The run method must be defined by the threaded object.')
   end
 end
 
