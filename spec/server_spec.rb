@@ -22,7 +22,7 @@ describe Servolux::Server do
     test(?e, @server.pid_file).should be_false
 
     t = Thread.new {@server.startup}
-    Thread.pass until t.status == 'sleep'
+    Thread.pass until @server.status == 'sleep'
     test(?e, @server.pid_file).should be_true
 
     @server.shutdown
@@ -32,7 +32,7 @@ describe Servolux::Server do
 
   it 'shuts down gracefully when signaled' do
     t = Thread.new {@server.startup}
-    Thread.pass until t.status == 'sleep'
+    Thread.pass until @server.status == 'sleep'
     @server.running?.should be_true
 
     Process.kill('INT', $$)
@@ -48,7 +48,7 @@ describe Servolux::Server do
     end
 
     t = Thread.new {@server.startup}
-    Thread.pass until t.status == 'sleep'
+    Thread.pass until @server.status == 'sleep'
     @log_output.readline
 
     Process.kill('USR1', $$)
