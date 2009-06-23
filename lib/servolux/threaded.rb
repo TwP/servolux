@@ -120,7 +120,7 @@ module Servolux::Threaded
   #    'sleep'    : sleeping or waiting on I/O
   #    'run'      : executing
   #    'aborting' : aborting
-  #    false      : not started or terminated normally
+  #    false      : not running or terminated normally
   #    nil        : terminated with an exception
   #
   # If this method returns +nil+, then calling join on the threaded object

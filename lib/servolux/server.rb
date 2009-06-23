@@ -145,6 +145,7 @@ class Servolux::Server
   #
   def initialize( name, opts = {}, &block )
     @name = name
+    @activity_thread = nil
     @activity_thread_running = false
 
     self.logger   = opts.getopt :logger
