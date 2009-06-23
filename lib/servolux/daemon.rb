@@ -1,16 +1,19 @@
 
 # == Synopsis
 # The Daemon takes care of the work of creating and managing daemon
-# processes from with Ruby.
+# processes from Ruby.
 #
 # == Details
+# checks for a PID
+# checks for an updated log file
+# checks for a specific log line
 #
 #
 class Servolux::Daemon
 
-  Error          = Class.new(StandardError)
+  Error = Class.new(::Servolux::Error)
   Timeout        = Class.new(Error)
-  AlreadyStarted = Class.new(Error)
+  StartupError   = Class.new(Error)
 
   attr_reader   :name
   attr_writer   :logger
@@ -66,7 +69,9 @@ class Servolux::Daemon
   #     prevents zombie processes. The default is false.
   #
   # * shutdown_command
-  #     TODO: Not Yet Implemented
+  #     Assign the startup command. This can be either a String, an Array of
+  #     strings, a Proc, a bound Method, or a Servolux::Server instance.
+  #     Different calling semantics are used for each type of command.
   #
   # * log_file <String>
   #     This log file will be monitored to determine if the daemon process
@@ -158,14 +163,18 @@ class Servolux::Daemon
   #
   def startup
     raise Error, "Fork is not supported in this Ruby environment." unless ::Servolux.fork?
+    return if alive?
 
-    if alive?
-      raise AlreadyStarted,
-            "#{name.inspect} is already running: " \
-            "PID is #{retrieve_pid} from PID file #{pid_file.inspect}"
-    end
+    logger.debug "About to fork ..."
+    @piper = ::Servolux::Piper.daemon(nochdir, noclose)
 
-    daemonize
+    @piper.parent {
+      @piper.timeout = 0
+      wait_for_startup
+      exit!(0)
+    }
+
+    @piper.child { run_startup_command }
   end
 
   # Stop the daemon process. If a shutdown command has been defined, it will
@@ -242,19 +251,6 @@ class Servolux::Daemon
 
   private
 
-  def daemonize
-    logger.debug "About to fork ..."
-
-    @piper = ::Servolux::Piper.daemon(nochdir, noclose)
-
-    @piper.parent {
-      wait_for_startup
-      exit!(0)
-    }
-
-    @piper.child { run_startup_command }
-  end
-
   def run_startup_command
     case startup_command
     when String; exec(startup_command)
@@ -302,56 +298,19 @@ class Servolux::Daemon
   def wait_for_startup
     logger.debug "Waiting for #{name.inspect} to startup."
 
-    begin
-      started = wait_for {
-        rv = started?
-        err = @piper.gets; raise err unless err.nil?
-        rv
-      }
-
-      if started
-        logger.info 'Server has daemonized.'
-        return
-      end
-    rescue Exception => err
-      child_err = @piper.gets
-      raise child_err || err
-    ensure
-      @piper.close
-    end
-
-    # if the daemon doesn't fork into the background in time, then kill it.
-    force_kill
-  end
-
-  def force_kill
-    pid = retrieve_pid
-
-    t = Thread.new {
-      begin
-        sleep 7
-        unless Thread.current[:stop]
-          Process.kill('KILL', pid)
-          Process.waitpid(pid)
-        end
-      rescue Exception
-      end
+    started = wait_for {
+      rv = started?
+      err = @piper.gets
+      raise StartupError, "Child raised error: #{err.inspect}" unless err.nil?
+      rv
     }
 
-    Process.kill('TERM', pid) rescue nil
-    Process.waitpid(pid) rescue nil
-    t[:stop] = true
-    t.run if t.status
-    t.join
-
     raise Timeout, "#{name.inspect} failed to startup in a timely fashion. " \
-                   "The timeout is set at #{timeout} seconds."
+                   "The timeout is set at #{timeout} seconds." unless started
 
-  rescue Errno::ENOENT
-    raise Timeout, "Could not find a PID file at #{pid_file.inspect}."
-  rescue Errno::EACCES => err
-    raise Timeout, "You do not have access to the PID file at " \
-                   "#{pid_file.inspect}: #{err.message}"
+    logger.info 'Server has daemonized.'
+  ensure
+    @piper.close
   end
 
   def wait_for_shutdown
@@ -363,14 +322,14 @@ class Servolux::Daemon
 
   def wait_for
     start = Time.now
-    nap_time = 0.1
+    nap_time = 0.2
 
     loop do
       sleep nap_time
 
       diff = Time.now - start
       nap_time = 2*nap_time
-      nap_time = diff + 0.1 if diff < nap_time
+      nap_time = 0.2 if nap_time > 1.6
 
       break true if yield
       break false if diff >= timeout
