@@ -122,7 +122,11 @@ class Servolux::Piper
     end
 
     @timeout = opts.getopt(:timeout, 0)
-    @read_io, @write_io = IO.pipe
+    if defined? ::Encoding
+      @read_io, @write_io = IO.pipe('ASCII-8BIT')    # encoding for Ruby 1.9
+    else
+      @read_io, @write_io = IO.pipe
+    end
     @child_pid = Kernel.fork
 
     if child?
