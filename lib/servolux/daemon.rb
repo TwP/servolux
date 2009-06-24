@@ -1,19 +1,77 @@
-
 # == Synopsis
 # The Daemon takes care of the work of creating and managing daemon
 # processes from Ruby.
 #
 # == Details
-# checks for a PID
-# checks for an updated log file
-# checks for a specific log line
+# A daemon process is a long running process on a UNIX system that is
+# detached from a TTY -- i.e. it is not tied to a user session. These types
+# of processes are notoriously difficult to setup correctly. This Daemon
+# class encapsulates some best practices to ensure daemons startup properly
+# and can be shutdown gracefully.
 #
+# Starting a daemon process involves forking a child process, setting the
+# child as a session leader, forking again, and detaching from the current
+# working directory and standard in/out/error file descriptors. Because of
+# this separation between the parent process and the daemon process, it is
+# difficult to know if the daemon started properly.
+#
+# The Daemon class opens a pipe between the parent and the daemon. The PID
+# of the daemon is sent to the parent through this pipe. The PID is used to
+# check if the daemon is alive. Along with the PID, any errors from the
+# daemon process are marshalled through the pipe back to the parent. These
+# errors are wrapped in a StartupError and then raised in the parent.
+#
+# If no errors are passed up the pipe, the parent process waits till the
+# daemon starts. This is determined by sending a signal to the daemon
+# process.
+#
+# If a log file is given to the Daemon instance, then it is monitored for a
+# change in size and mtime. This lets the Daemon instance know that the
+# daemon process is updating the log file. Furthermore, the log file can be
+# watched for a specific pattern; this pattern signals that the daemon
+# process is up and running.
+#
+# Shutting down the daemon process is a little simpler. An external shutdown
+# command can be used, or the Daemon instance will send an INT or TERM
+# signal to the daemon process.
+#
+# Again, the Daemon instance will wait till the daemon process shuts down.
+# This is determined by attempting to signal the daemon process PID and then
+# returning when this signal fails -- i.e. then the deamon process has died.
+#
+# == Examples
+#
+# ==== Bad Example
+# This is a bad example. The daemon will not start because the startup
+# command "/usr/bin/no-command-by-this-name" cannot be found on the file
+# system. The daemon process will send an Errno::ENOENT through the pipe
+# back to the parent which gets wrapped in a StartupError
+#
+#    daemon = Servolux::Daemon.new(
+#        :name => 'Bad Example',
+#        :pid_file => '/dev/null',
+#        :startup_command => '/usr/bin/no-command-by-this-name'
+#    )
+#    daemon.startup    #=> raises StartupError
+#
+# ==== Good Example
+# This is a simple Ruby server that prints the time to a file every minute.
+# So, it's not really a "good" example, but it will work.
+#
+#    server = Servolux::Server.new('TimeStamp', :interval => 60)
+#    class << server
+#      def file() @fd ||= File.open('timestamps.txt', 'w'); end
+#      def run() file.puts Time.now; end
+#    end
+#
+#    daemon = Servolux::Daemon.new(:server => server, :log_file => 'timestamps.txt')
+#    daemon.startup
 #
 class Servolux::Daemon
 
   Error = Class.new(::Servolux::Error)
-  Timeout        = Class.new(Error)
-  StartupError   = Class.new(Error)
+  Timeout = Class.new(Error)
+  StartupError = Class.new(Error)
 
   attr_reader   :name
   attr_writer   :logger
