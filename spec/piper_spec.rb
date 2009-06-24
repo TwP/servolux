@@ -90,6 +90,20 @@ describe Servolux::Piper do
     }
   end
 
+  it 'creates a daemon process' do
+    @piper = Servolux::Piper.daemon(true, true)
+
+    @piper.child {
+      @piper.puts Process.ppid
+      @piper.close
+      exit!
+    }
+
+    @piper.parent {
+      @piper.gets.should == 1
+    }
+  end
+
 end
 end  # if Servolux.fork?
 
