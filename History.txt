@@ -1,3 +1,10 @@
+== 0.4.0 / 2009-07-01
+
+* 1 Minor Enhancement
+  * Added a "Child" class for working with child processes
+* 1 Bug Fix
+  * Thread#join has a small bug in JRuby - implemented workaround
+
 == 0.3.0 / 2009-06-24
 
 * 2 Minor Enhancements

@@ -4,7 +4,7 @@ require 'logging'
 module Servolux
 
   # :stopdoc:
-  VERSION = '0.3.0'
+  VERSION = '0.4.0'
   LIBPATH = ::File.expand_path(::File.dirname(__FILE__)) + ::File::SEPARATOR
   PATH = ::File.dirname(LIBPATH) + ::File::SEPARATOR
   # :startdoc:
@@ -42,7 +42,7 @@ module Servolux
 
 end  # module Servolux
 
-%w[threaded server piper daemon].each do |lib|
+%w[threaded server piper daemon child].each do |lib|
   require Servolux.libpath('servolux', lib)
 end
 

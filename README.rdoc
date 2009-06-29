@@ -1,22 +1,17 @@
 = Serv-O-Lux
 * by Tim Pease
-* http://codeforpeople.rubyforge.org/servolux
+* http://github.com/TwP/servolux/tree/master
 
 === DESCRIPTION:
 
-Threads : Servers : Forks : Daemons
+Threads : Servers : Forks : Daemons : Serv-O-Lux has them all!
 
-=== FEATURES/PROBLEMS:
+=== FEATURES:
 
-* FIXME (list of features or problems)
+http://codeforpeople.rubyforge.org/servolux
 
 === SYNOPSIS:
 
-  FIXME (code sample of usage)
-
-=== REQUIREMENTS:
-
-* FIXME (list of requirements)
 
 === INSTALL:
 

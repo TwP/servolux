@@ -90,7 +90,7 @@ module Servolux::Threaded
     @activity_thread_running = false
     before_stopping if self.respond_to?(:before_stopping)
     @activity_thread.wakeup
-    @activity_thread.join limit
+    join limit
     @activity_thread = nil
     after_stopping if self.respond_to?(:after_stopping)
     self
@@ -144,6 +144,26 @@ module Servolux::Threaded
   def interval
     @activity_thread_interval
   end
+
+  # :stopdoc:
+  #
+  # The JRuby platform has an implementation error in it's Thread#join
+  # method. In the Matz Ruby Interpreter, Thread#join with a +nil+ argument
+  # will sleep forever; in the JRuby implementation, join will return
+  # immediately.
+  #
+  if 'java' == RUBY_PLATFORM
+    undef :join
+    def join( limit = nil )
+      return if @activity_thread.nil?
+      if limit.nil?
+        @activity_thread.join ? self : nil
+      else
+        @activity_thread.join(limit) ? self : nil
+      end
+    end
+  end
+  # :startdoc:
 
 end  # module Servolux::Threaded
 
