@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.description = %q{Threads : Servers : Forks : Daemons : Serv-O-Lux has them all!}
   s.email = %q{tim.pease@gmail.com}
   s.extra_rdoc_files = ["History.txt", "README.rdoc"]
-  s.files = ["History.txt", "README.rdoc", "Rakefile", "lib/servolux.rb", "lib/servolux/child.rb", "lib/servolux/daemon.rb", "lib/servolux/piper.rb", "lib/servolux/server.rb", "lib/servolux/threaded.rb", "spec/piper_spec.rb", "spec/server_spec.rb", "spec/servolux_spec.rb", "spec/spec_helper.rb", "spec/threaded_spec.rb"]
+  s.files = ["History.txt", "README.rdoc", "Rakefile", "foo.rb", "lib/servolux.rb", "lib/servolux/child.rb", "lib/servolux/daemon.rb", "lib/servolux/piper.rb", "lib/servolux/server.rb", "lib/servolux/threaded.rb", "spec/piper_spec.rb", "spec/server_spec.rb", "spec/servolux_spec.rb", "spec/spec_helper.rb", "spec/threaded_spec.rb"]
   s.has_rdoc = true
   s.homepage = %q{http://codeforpeople.rubyforge.org/servolux}
   s.rdoc_options = ["--main", "README.rdoc"]

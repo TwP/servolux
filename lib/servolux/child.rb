@@ -47,12 +47,14 @@ class Servolux::Child
     self
   end
 
-  # Waits for the child process to exit, returns its process id, and sets $?
-  # to a Process::Status object containing information on that process.
+  # Waits for the child process to exit and returns its exit status. The
+  # global variable $? is set to a Process::Status object containing
+  # information on the child process.
   #
   def wait( flags = 0 )
     return if @io.nil?
     Process.wait(@pid, flags)
+    $?.exitstatus
   end
 
   # Returns +true+ if the child process is alive.
