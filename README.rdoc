@@ -4,18 +4,39 @@
 
 === DESCRIPTION:
 
-Threads : Servers : Forks : Daemons : Serv-O-Lux has them all!
+Serv-O-Lux is a collection of Ruby classes that are useful for daemon and
+process management, and for writing your own Ruby services. The code is well
+documented and tested. It works with Ruby and JRuby supporing both 1.8 and 1.9
+interpreters.
 
 === FEATURES:
 
-http://codeforpeople.rubyforge.org/servolux
+Servolux::Threaded -- when included into your own class, it gives you an
+activity thread that will run some code at a regular interval. Provides methods
+to start and stop the thread, report on the running state, and join the thread
+to wait for it to complete.
 
-=== SYNOPSIS:
+Servolux::Server -- a template server class that handles the mundane work of
+creating / deleting a PID file, reporting running state, logging errors,
+starting the service, and gracefully shutting down the service.
 
+Servolux::Piper -- an extension of the standard Ruby fork method that opens a
+pipe for communication between parent and child processes. Ruby objects are
+passed between parent and child allowing, for example, exceptions in the child
+process to be passed to the parent and raised there.
+
+Servolux::Daemon -- a robust class for starting and stopping daemon processes.
+
+Servolux::Child -- adds some much needed funtionality to child processes
+created via Ruby's IO#popen method. Specifically, a timeout thread is used to
+signal the child process to die if it does not exit in a given amount of time.
+
+
+All the documentation is available online at http://codeforpeople.rubyforge.org/servolux
 
 === INSTALL:
 
-gem install servolux
+  gem install servolux
 
 === LICENSE:
 
