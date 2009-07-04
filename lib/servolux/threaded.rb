@@ -57,13 +57,17 @@ module Servolux::Threaded
 
     before_starting if self.respond_to?(:before_starting)
     @activity_thread_running = true
+    @activity_thread_iterations = 0
     @activity_thread = Thread.new {
       begin
         loop {
           sleep interval if running?
           break unless running?
           run
+          @activity_thread_iterations += 1
+          break if finished_iterations?
         }
+        @activity_thread_running = false
       rescue Exception => err
         @activity_thread_running = false
         logger.fatal err unless err.is_a?(SystemExit)
@@ -96,6 +100,20 @@ module Servolux::Threaded
     self
   end
 
+  # Wait on the activity thread.  If the thread is already stopped, this
+  # method will return without taking any action.  Otherwise, this method
+  # does not return until the activity thread has stopped, or a specific
+  # number of iterations has passed since this method was called.
+  #
+  def wait( limit = nil )
+    return self unless running?
+    start_waiting_iterations = self.iterations
+    loop {
+      break unless running?
+      break if limit and self.iterations > ( start_waiting_iterations + limit )
+    }
+  end
+
   # If the activity thread is running, the calling thread will suspend
   # execution and run the activity thread. This method does not return until
   # the activity thread is stopped or until _limit_ seconds have passed.
@@ -113,6 +131,22 @@ module Servolux::Threaded
   #
   def running?
     @activity_thread_running
+  end
+
+  # Returns +true+ if the activity thread has finished its maximum
+  # number of iterations or the thread is no longer running.
+  # Returns +false+ otherwise.
+  #
+  def finished_iterations?
+    if running? then
+      if @activity_thread_maximum_iterations and
+         (@activity_thread_iterations >= @activity_thread_maximum_iterations) then
+        return true
+      end
+    else
+      return true
+    end
+    return false
   end
 
   # Returns the status of threaded object.
@@ -143,6 +177,28 @@ module Servolux::Threaded
   #
   def interval
     @activity_thread_interval
+  end
+
+  # Sets the maximum number of invocations of the threaded object's
+  # 'run' method
+  #
+  def maximum_iterations=( value )
+    raise ArgumentError, "maximum iterations must be >= 1" unless value.to_i >= 1
+    @activity_thread_maximum_iterations = value
+  end
+
+  # Returns the maximum number of invocations of the threaded
+  # object's 'run' method
+  #
+  def maximum_iterations
+    @activity_thread_maximum_iterations || 0
+  end
+
+  # Returns the number of iterations so far of the threaded object's
+  # 'run' method.
+  #
+  def iterations
+    @activity_thread_iterations || 0
   end
 
   # :stopdoc:

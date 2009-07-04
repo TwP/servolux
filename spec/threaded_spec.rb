@@ -90,6 +90,7 @@ describe Servolux::Threaded do
     lambda { obj.join }.should raise_error(RuntimeError, 'ni')
   end
 
+
   it "complains loudly if you don't have a run method" do
     obj = base.new
     obj.start
@@ -99,6 +100,23 @@ describe Servolux::Threaded do
     @log_output.readline.chomp.should == "FATAL  Object : <NotImplementedError> The run method must be defined by the threaded object."
 
     lambda { obj.join }.should raise_error(NotImplementedError, 'The run method must be defined by the threaded object.')
+  end
+
+  it "stops after a limited number of iterations" do
+    klass = Class.new( base ) do
+      def run() ; end
+    end
+    obj = klass.new
+    obj.maximum_iterations = 5
+    obj.iterations.should == 0
+    obj.start
+    obj.wait
+    obj.iterations.should == 5
+  end
+
+  it "complains loudly if you attempt to set a maximum number of iterations < 1" do
+    obj = base.new
+    lambda { obj.maximum_iterations = -1 }.should raise_error( ArgumentError, "maximum iterations must be >= 1" )
   end
 end
 

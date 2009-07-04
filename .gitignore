@@ -9,7 +9,8 @@
 # For a project with a C extension, the following would be a good set of
 # exclude patterns (uncomment them if you want to use them):
 # *.[oa]
-# *~
+*~
+*.sw[op]
 announcement.txt
 coverage
 doc
