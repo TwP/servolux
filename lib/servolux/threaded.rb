@@ -61,17 +61,24 @@ module Servolux::Threaded
     @activity_thread = Thread.new {
       begin
         loop {
-          sleep interval if running?
-          break unless running?
-          run
-          @activity_thread_iterations += 1
-          break if finished_iterations?
+          begin
+            sleep interval if running?
+            break unless running?
+            run
+            @activity_thread_iterations += 1
+            break if finished_iterations?
+          rescue SystemExit; raise
+          rescue Exception => err
+            if continue_on_error?
+              logger.error err
+            else
+              logger.fatal err
+              raise err
+            end
+          end
         }
+      ensure
         @activity_thread_running = false
-      rescue Exception => err
-        @activity_thread_running = false
-        logger.fatal err unless err.is_a?(SystemExit)
-        raise err
       end
     }
     after_starting if self.respond_to?(:after_starting)
@@ -138,14 +145,8 @@ module Servolux::Threaded
   # Returns +false+ otherwise.
   #
   def finished_iterations?
-    if running? then
-      if @activity_thread_maximum_iterations and
-         (@activity_thread_iterations >= @activity_thread_maximum_iterations) then
-        return true
-      end
-    else
-      return true
-    end
+    return true unless running?
+    return true if maximum_iterations and (iterations >= maximum_iterations)
     return false
   end
 
@@ -176,7 +177,7 @@ module Servolux::Threaded
   # threaded object's 'run' method.
   #
   def interval
-    @activity_thread_interval
+    @activity_thread_interval ||= 60
   end
 
   # Sets the maximum number of invocations of the threaded object's
@@ -184,21 +185,42 @@ module Servolux::Threaded
   #
   def maximum_iterations=( value )
     raise ArgumentError, "maximum iterations must be >= 1" unless value.to_i >= 1
-    @activity_thread_maximum_iterations = value
+    @activity_thread_maximum_iterations = value.to_i
   end
 
   # Returns the maximum number of invocations of the threaded
   # object's 'run' method
   #
   def maximum_iterations
-    @activity_thread_maximum_iterations || 0
+    return unless defined? @activity_thread_maximum_iterations
+    @activity_thread_maximum_iterations
   end
 
-  # Returns the number of iterations so far of the threaded object's
-  # 'run' method.
+  # Returns the number of iterations of the threaded object's 'run' method
+  # completed thus far.
   #
   def iterations
-    @activity_thread_iterations || 0
+    @activity_thread_iterations ||= 0
+  end
+
+  # Set to +true+ to continue running the threaded object even if an error
+  # is raised by the +run+ method. The default behavior is to stop the
+  # activity thread when an error is raised by the run method.
+  #
+  # A SystemExit will never be caught; it will always cause the Ruby
+  # interpreter to exit.
+  #
+  def continue_on_error=( value )
+    @activity_thread_continue_on_error = (value ? true : false)
+  end
+
+  # Returns +true+ if the threded object should continue running even if an
+  # error is raised by the run method. The default is to return +false+. The
+  # threaded object will stop running when an error is raised.
+  #
+  def continue_on_error?
+    return @activity_thread_continue_on_error if defined? @activity_thread_continue_on_error
+    @activity_thread_continue_on_error = false
   end
 
   # :stopdoc:

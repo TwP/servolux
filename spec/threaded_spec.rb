@@ -90,6 +90,31 @@ describe Servolux::Threaded do
     lambda { obj.join }.should raise_error(RuntimeError, 'ni')
   end
 
+  it "lives if told to continue on error" do
+    klass = Class.new(base) do
+      def run()
+        @sleep ||= false
+        if @sleep then sleep
+        else
+          @sleep = true
+          raise 'ni'
+        end
+      end
+    end
+
+    obj = klass.new
+    obj.continue_on_error = true
+
+    obj.start
+    obj.pass
+
+    obj.running?.should be_true
+    @log_output.readline
+    @log_output.readline.chomp.should == "ERROR  Object : <RuntimeError> ni"
+
+    obj.stop(2)
+    obj.running?.should be_false
+  end
 
   it "complains loudly if you don't have a run method" do
     obj = base.new
