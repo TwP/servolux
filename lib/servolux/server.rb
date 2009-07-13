@@ -1,4 +1,6 @@
 
+require 'thread'
+
 # == Synopsis
 # The Server class makes it simple to create a server-type application in
 # Ruby. A server in this context is any process that should run for a long
@@ -147,6 +149,8 @@ class Servolux::Server
     @name = name
     @activity_thread = nil
     @activity_thread_running = false
+    @mutex = Mutex.new
+    @shutdown = nil
 
     self.logger   = opts.getopt :logger
     self.pid_file = opts.getopt :pid_file
@@ -172,6 +176,10 @@ class Servolux::Server
   #
   def startup
     return self if running?
+    @mutex.synchronize {
+      @shutdown = ConditionVariable.new
+    }
+
     begin
       create_pid_file
       trap_signals
@@ -183,9 +191,43 @@ class Servolux::Server
     return self
   end
 
-  alias :shutdown :stop     # for symmetry with the startup method
-  alias :int :stop          # handles the INT signal
-  alias :term :stop         # handles the TERM signal
+  # Stop the server if it is running. This method will return after three
+  # things have occurred:
+  #
+  # 1) The 'before_stopping' method has returned.
+  # 2) The server's activity thread has stopped.
+  # 3) The 'after_stopping' method has returned.
+  #
+  # It is entirely possible that the activity thread will stop before either
+  # the +before_stopping+ or +after_stopping+ methods return. To make sure
+  # the server is completely stopped, use the +wait_for_shutdown+ method to
+  # be notified when the this +shutdown+ method is finished executing.
+  #
+  def shutdown
+    return self unless running?
+    stop
+
+    @mutex.synchronize {
+      @shutdown.signal
+      @shutdown = nil
+    }
+    self
+  end
+
+  # If the server has been started, this method waits till the +shutdown+
+  # method has been called and has completed. The current thread will be
+  # blocked until the server has been safely stopped.
+  #
+  def wait_for_shutdown
+    return self unless running?
+    @mutex.synchronize {
+      @shutdown.wait(@mutex) unless @shutdown.nil?
+    }
+    self
+  end
+
+  alias :int :shutdown     # handles the INT signal
+  alias :term :shutdown    # handles the TERM signal
   private :start, :stop
 
   # Returns the PID file name used by the server. If none was given, then

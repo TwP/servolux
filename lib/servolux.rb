@@ -4,7 +4,7 @@ require 'logging'
 module Servolux
 
   # :stopdoc:
-  VERSION = '0.6.0'
+  VERSION = '0.6.1'
   LIBPATH = ::File.expand_path(::File.dirname(__FILE__)) + ::File::SEPARATOR
   PATH = ::File.dirname(LIBPATH) + ::File::SEPARATOR
   # :startdoc:

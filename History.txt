@@ -1,3 +1,8 @@
+== 0.6.1 / 2009-07-13
+
+* 1 Minor Enhancement
+  * Added a method to wait for server shutdown in the Server class
+
 == 0.6.0 / 2009-07-07
 
 * 2 Minor Enhancements
