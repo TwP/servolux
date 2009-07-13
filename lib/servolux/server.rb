@@ -219,7 +219,6 @@ class Servolux::Server
   # blocked until the server has been safely stopped.
   #
   def wait_for_shutdown
-    return self unless running?
     @mutex.synchronize {
       @shutdown.wait(@mutex) unless @shutdown.nil?
     }
