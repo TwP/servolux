@@ -174,7 +174,12 @@ class Servolux::Server
   # shutdown the server, starting and joining the server thread. The PID
   # file is deleted when this method returns.
   #
-  def startup
+  # If +true+ is passed to this method, then it will not return until the
+  # +wait_for_shutdown+ method has been called from another thread. This
+  # flag is used to ensure that the server has shutdown completely when
+  # shutdown by a signal.
+  #
+  def startup( wait = false )
     return self if running?
     @mutex.synchronize {
       @shutdown = ConditionVariable.new
@@ -185,6 +190,7 @@ class Servolux::Server
       trap_signals
       start
       join
+      wait_for_shutdown if wait
     ensure
       delete_pid_file
     end

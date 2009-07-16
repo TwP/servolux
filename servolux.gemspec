@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{servolux}
-  s.version = "0.6.0"
+  s.version = "0.6.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Tim Pease"]
-  s.date = %q{2009-07-07}
+  s.date = %q{2009-07-16}
   s.description = %q{Serv-O-Lux is a collection of Ruby classes that are useful for daemon and process management, and for writing your own Ruby services. The code is well documented and tested. It works with Ruby and JRuby supporing both 1.8 and 1.9 interpreters.}
   s.email = %q{tim.pease@gmail.com}
   s.extra_rdoc_files = ["History.txt", "README.rdoc"]
