@@ -129,9 +129,12 @@ class Servolux::Server
 
   Error = Class.new(::Servolux::Error)
 
+  DEFAULT_PID_FILE_MODE = 0640
+
   attr_reader   :name
   attr_accessor :logger
   attr_writer   :pid_file
+  attr_accessor :pid_file_mode
 
   # call-seq:
   #    Server.new( name, options = {} ) { block }
@@ -152,9 +155,10 @@ class Servolux::Server
     @mutex = Mutex.new
     @shutdown = nil
 
-    self.logger   = opts.getopt :logger
-    self.pid_file = opts.getopt :pid_file
-    self.interval = opts.getopt :interval, 0
+    self.logger        = opts.getopt :logger
+    self.pid_file      = opts.getopt :pid_file
+    self.pid_file_mode = opts.getopt :pid_file_mode, DEFAULT_PID_FILE_MODE
+    self.interval      = opts.getopt :interval, 0
 
     if block
       eg = class << self; self; end
@@ -246,7 +250,7 @@ class Servolux::Server
 
   def create_pid_file
     logger.debug "Server #{name.inspect} creating pid file #{pid_file.inspect}"
-    File.open(pid_file, 'w') {|fd| fd.write(Process.pid.to_s)}
+    File.open(pid_file, 'w', pid_file_mode) {|fd| fd.write(Process.pid.to_s)}
   end
 
   def delete_pid_file

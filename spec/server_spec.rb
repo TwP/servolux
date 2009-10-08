@@ -30,6 +30,19 @@ describe Servolux::Server do
     test(?e, @server.pid_file).should be_false
   end
 
+  it 'generates a PID file with mode rw-r----- by default' do
+    t = Thread.new {@server.startup}
+    Thread.pass until @server.status == 'sleep'
+    (File.stat(@server.pid_file).mode & 0777).should == 0640
+  end
+
+  it 'generates PID file with the specified permissions' do
+    @server.pid_file_mode = 0400
+    t = Thread.new {@server.startup}
+    Thread.pass until @server.status == 'sleep'
+    (File.stat(@server.pid_file).mode & 0777).should == 0400
+  end
+
   it 'shuts down gracefully when signaled' do
     t = Thread.new {@server.startup}
     Thread.pass until @server.status == 'sleep'
