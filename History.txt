@@ -1,3 +1,8 @@
+== 0.7.0 / 2009-10-
+
+* 1 Minor Enhancement
+  * Added a permissions mask for the server PID file [Avdi Grimm]
+
 == 0.6.2 / 2009-07-16
 
 * 1 Minor Enhancement
