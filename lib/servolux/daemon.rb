@@ -256,7 +256,7 @@ class Servolux::Daemon
     wait_for_shutdown
   end
 
-  # Returns +true+ if the daemon processis currently running. Returns
+  # Returns +true+ if the daemon process is currently running. Returns
   # +false+ if this is not the case. The status of the process is determined
   # by sending a signal to the process identified by the +pid_file+.
   #
