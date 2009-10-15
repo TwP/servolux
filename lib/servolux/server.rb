@@ -150,8 +150,6 @@ class Servolux::Server
   #
   def initialize( name, opts = {}, &block )
     @name = name
-    @activity_thread = nil
-    @activity_thread_running = false
     @mutex = Mutex.new
     @shutdown = nil
 

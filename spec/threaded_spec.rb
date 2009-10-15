@@ -6,8 +6,7 @@ describe Servolux::Threaded do
   base = Class.new do
     include Servolux::Threaded
     def initialize
-      @activity_thread_running = false
-      @activity_thread_interval = 0
+      self.interval = 0
     end
     def pass( val = 'sleep' )
       Thread.pass until status == val
