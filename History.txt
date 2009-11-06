@@ -1,3 +1,8 @@
+== 0.7.1 / 2009-11-06
+
+* 1 Bug Fix
+  * Server shutdown would hang in Ruby 1.9.1
+
 == 0.7.0 / 2009-11-06
 
 * 1 Minor Enhancement

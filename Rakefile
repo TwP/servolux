@@ -22,6 +22,7 @@ Bones {
   spec.opts << '--color'
 
   use_gmail
+  enable_sudo
 
   depend_on  'bones-extras', :development => true
   depend_on  'logging',      :development => true

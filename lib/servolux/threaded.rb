@@ -61,20 +61,19 @@ module Servolux::Threaded
   end
 
   # Stop the activity thread. If already stopped this method will return
-  # without taking any action. Otherwise, this method does not return until
-  # the activity thread has died or until _limit_ seconds have passed.
+  # without taking any action.
   #
   # If the including class defines a 'before_stopping' method, it will be
   # called before the thread is stopped. Likewise, if the including class
   # defines an 'after_stopping' method, it will be called after the thread
   # has stopped.
   #
-  def stop( limit = nil )
+  def stop
     return self unless _activity_thread.running?
     logger.debug "Stopping"
 
     before_stopping if self.respond_to?(:before_stopping)
-    @_activity_thread.stop limit
+    @_activity_thread.stop
     after_stopping if self.respond_to?(:after_stopping)
     self
   end
@@ -201,10 +200,10 @@ module Servolux::Threaded
   # :stopdoc:
 
   def _activity_thread
-    @_activity_thread ||= ::Servolux::Threaded::ThreadContainer.new(nil, false, 60, 0, nil, false);
+    @_activity_thread ||= ::Servolux::Threaded::ThreadContainer.new(60, 0, nil, false);
   end
 
-  ThreadContainer = Struct.new( :thread, :running, :interval, :iterations, :maximum_iterations, :continue_on_error ) {
+  ThreadContainer = Struct.new( :interval, :iterations, :maximum_iterations, :continue_on_error, :thread, :running ) {
     def start( threaded )
       self.running = true
       self.iterations = 0
@@ -212,11 +211,9 @@ module Servolux::Threaded
       Thread.pass
     end
 
-    def stop( limit )
+    def stop
       self.running = false
       thread.wakeup
-      join limit
-      self.thread = nil
     end
 
     def run( threaded )

@@ -20,13 +20,13 @@ describe Servolux::Threaded do
 
     obj = klass.new
     obj.interval = 0
-    obj.running?.should be_false
+    obj.running?.should be_nil
 
     obj.start
     obj.running?.should be_true
     obj.pass
 
-    obj.stop(2)
+    obj.stop.join(2)
     obj.running?.should be_false
   end
 
@@ -46,7 +46,7 @@ describe Servolux::Threaded do
     obj.stopped.should be_false
     obj.pass
 
-    obj.stop(2)
+    obj.stop.join(2)
     obj.stopped.should be_true
   end
 
@@ -68,7 +68,7 @@ describe Servolux::Threaded do
     obj.ary.should == [1,2]
     obj.pass
 
-    obj.stop(2)
+    obj.stop.join(2)
     obj.ary.should == [1,2,3,4]
   end
 
@@ -111,7 +111,7 @@ describe Servolux::Threaded do
     @log_output.readline
     @log_output.readline.chomp.should == "ERROR  Object : <RuntimeError> ni"
 
-    obj.stop(2)
+    obj.stop.join(2)
     obj.running?.should be_false
   end
 
