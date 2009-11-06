@@ -8,7 +8,7 @@ module Servolux
   LIBPATH = ::File.expand_path(::File.dirname(__FILE__)) + ::File::SEPARATOR
   PATH = ::File.dirname(LIBPATH) + ::File::SEPARATOR
   # :startdoc:
-  
+
   # Generic Servolux Error class.
   Error = Class.new(StandardError)
 

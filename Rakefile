@@ -1,16 +1,8 @@
-# Look in the tasks/setup.rb file for the various options that can be
-# configured in this Rakefile. The .rake files in the tasks directory
-# are where the options are used.
 
 begin
   require 'bones'
-  Bones.setup
 rescue LoadError
-  begin
-    load 'tasks/setup.rb'
-  rescue LoadError
-    raise RuntimeError, '### please install the "bones" gem ###'
-  end
+  abort '### please install the "bones" gem ###'
 end
 
 ensure_in_path 'lib'
@@ -18,24 +10,20 @@ require 'servolux'
 
 task :default => 'spec:specdoc'
 
-PROJ.name = 'servolux'
-PROJ.authors = 'Tim Pease'
-PROJ.email = 'tim.pease@gmail.com'
-PROJ.url = 'http://codeforpeople.rubyforge.org/servolux'
-PROJ.version = Servolux::VERSION
-PROJ.rubyforge.name = 'codeforpeople'
-PROJ.exclude << 'servolux.gemspec'
-PROJ.readme_file = 'README.rdoc'
-PROJ.ignore_file = '.gitignore'
-PROJ.rdoc.remote_dir = 'servolux'
+Bones {
+  name         'servolux'
+  authors      'Tim Pease'
+  email        'tim.pease@gmail.com'
+  url          'http://gemcutter.org/gems/servolux'
+  version      Servolux::VERSION
+  readme_file  'README.rdoc'
+  ignore_file  '.gitignore'
 
-PROJ.spec.opts << '--color'
+  spec.opts << '--color'
 
-PROJ.ann.email[:server] = 'smtp.gmail.com'
-PROJ.ann.email[:port] = 587
-PROJ.ann.email[:from] = 'Tim Pease'
+  use_gmail
 
-depend_on 'logging'
-depend_on 'rspec'
-
-# EOF
+  depend_on  'logging'
+  depend_on  'rspec',        :development => true
+  depend_on  'bones-extras', :development => true
+}
