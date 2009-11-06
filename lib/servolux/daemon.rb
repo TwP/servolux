@@ -75,7 +75,7 @@ class Servolux::Daemon
   StartupError = Class.new(Error)
 
   attr_reader   :name
-  attr_writer   :logger
+  attr_accessor :logger
   attr_accessor :pid_file
   attr_reader   :startup_command
   attr_accessor :shutdown_command
@@ -144,20 +144,20 @@ class Servolux::Daemon
   #     is fully started. The default is nil.
   #
   def initialize( opts = {} )
-    self.server = opts.getopt(:server) || opts.getopt(:startup_command)
+    self.server = opts[:server] || opts[:startup_command]
 
     @name     = opts[:name]     if opts.key?(:name)
     @logger   = opts[:logger]   if opts.key?(:logger)
     @pid_file = opts[:pid_file] if opts.key?(:pid_file)
-    @timeout  = opts.getopt(:timeout, 30)
-    @nochdir  = opts.getopt(:nochdir, false)
-    @noclose  = opts.getopt(:noclose, false)
-    @shutdown_command = opts.getopt(:shutdown_command)
+    @timeout  = opts[:timeout] || 30
+    @nochdir  = opts[:nochdir] || false
+    @noclose  = opts[:noclose] || false
+    @shutdown_command = opts[:shutdown_command]
 
     @piper = nil
     @logfile_reader = nil
-    self.log_file = opts.getopt(:log_file)
-    self.look_for = opts.getopt(:look_for)
+    self.log_file = opts[:log_file]
+    self.look_for = opts[:look_for]
 
     yield self if block_given?
 
@@ -299,12 +299,6 @@ class Servolux::Daemon
     unless err.is_a?(SystemExit)
       logger.error "Failed to kill PID #{pid} with #{signal}: #{err.message}"
     end
-  end
-
-  # Returns the logger instance used by the daemon to log messages.
-  #
-  def logger
-    @logger ||= Logging.logger[self]
   end
 
 

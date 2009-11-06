@@ -1,6 +1,4 @@
 
-require 'logging'
-
 module Servolux
 
   # :stopdoc:

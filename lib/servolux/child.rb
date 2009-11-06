@@ -68,10 +68,10 @@ class Servolux::Child
   #     a signal before trying the next one in the list.
   #
   def initialize( opts = {} )
-    @command = opts.getopt :command
-    @timeout = opts.getopt :timeout
-    @signals = opts.getopt :signals, %w[TERM QUIT KILL]
-    @suspend = opts.getopt :suspend, 4
+    @command = opts[:command]
+    @timeout = opts[:timeout]
+    @signals = opts[:signals] || %w[TERM QUIT KILL]
+    @suspend = opts[:suspend] || 4
     @io = @pid = @status = @thread = @timed_out = nil
     yield self if block_given?
   end

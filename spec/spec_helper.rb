@@ -3,6 +3,7 @@ unless defined? SERVOLUX_SPEC_HELPER
 SERVOLUX_SPEC_HELPER = true
 
 require 'rubygems'
+require 'logging'
 require 'spec'
 require 'spec/logging_helper'
 

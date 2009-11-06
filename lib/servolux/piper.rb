@@ -121,7 +121,7 @@ class Servolux::Piper
       raise ArgumentError, "Unsupported mode #{mode.inspect}"
     end
 
-    @timeout = opts.getopt(:timeout, 0)
+    @timeout = opts[:timeout] || 0
     if defined? ::Encoding
       @read_io, @write_io = IO.pipe('ASCII-8BIT')    # encoding for Ruby 1.9
     else
