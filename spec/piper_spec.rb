@@ -40,6 +40,7 @@ describe Servolux::Piper do
         end
         @piper.puts obj unless obj.nil?
       }
+      exit!
     }
 
     @piper.parent {
@@ -77,6 +78,7 @@ describe Servolux::Piper do
       Thread.new { sleep 7; exit! }
       @piper.puts :ready
       loop { sleep }
+      exit!
     }
 
     @piper.parent {

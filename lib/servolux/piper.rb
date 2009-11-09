@@ -47,7 +47,7 @@
 class Servolux::Piper
 
   # :stopdoc:
-  SEPERATOR = [0xDEAD, 0xBEEF].pack('n*').freeze
+  SIZEOF_INT = [42].pack('I').size
   # :startdoc:
 
   # call-seq:
@@ -127,6 +127,8 @@ class Servolux::Piper
     else
       @read_io, @write_io = IO.pipe
     end
+
+    GC.start
     @child_pid = Kernel.fork
 
     if child?
@@ -248,10 +250,13 @@ class Servolux::Piper
   def gets
     return unless readable?
 
-    data = @read_io.gets SEPERATOR
+    data = @read_io.read SIZEOF_INT
     return if data.nil?
 
-    data.chomp! SEPERATOR
+    size = data.unpack('I').first
+    data = @read_io.read size
+    return if data.nil?
+
     Marshal.load(data) rescue data
   end
 
@@ -267,16 +272,13 @@ class Servolux::Piper
   def puts( obj )
     return unless writeable?
 
-    bytes = @write_io.write Marshal.dump(obj)
-    @write_io.write SEPERATOR if bytes > 0
-    @write_io.flush
-
-    bytes
+    data = Marshal.dump(obj)
+    @write_io.write([data.size].pack('I')) + @write_io.write(data)
   end
 
   # Send the given signal to the child process. The signal may be an integer
   # signal number or a POSIX signal name (either with or without a +SIG+
-  # prefix). 
+  # prefix).
   #
   # This method does nothing when called from the child process.
   #
