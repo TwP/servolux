@@ -20,11 +20,13 @@ Bones {
   ignore_file  '.gitignore'
 
   spec.opts << '--color'
+  rubyforge.name 'codeforpeople'
 
   use_gmail
   enable_sudo
 
   depend_on  'bones-extras', :development => true
+  depend_on  'bones-git',    :development => true
   depend_on  'logging',      :development => true
   depend_on  'rspec',        :development => true
 }
