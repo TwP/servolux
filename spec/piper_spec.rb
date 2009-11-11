@@ -11,7 +11,7 @@ describe Servolux::Piper do
 
   after :each do
     next if @piper.nil?
-    @piper.puts :die
+    @piper.puts :die rescue nil
     @piper.close
     @piper = nil
   end
@@ -66,7 +66,7 @@ describe Servolux::Piper do
   end
 
   it 'sends signals from parent to child' do
-    @piper = Servolux::Piper.new :timeout => 2
+    @piper = Servolux::Piper.new 'rw', :timeout => 2
 
     @piper.child {
       Signal.trap('USR2') { @piper.puts "'USR2' was received" rescue nil }

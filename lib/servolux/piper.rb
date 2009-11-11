@@ -1,4 +1,6 @@
 
+require 'socket'
+
 # == Synopsis
 # A Piper is used to fork a child proces and then establish a communication
 # pipe between the parent and child. This communication pipe is used to pass
@@ -90,12 +92,6 @@ class Servolux::Piper
   # The timeout in seconds to wait for puts / gets commands.
   attr_accessor :timeout
 
-  # The read end of the pipe.
-  attr_reader :read_io
-
-  # The write end of the pipe.
-  attr_reader :write_io
-
   # call-seq:
   #    Piper.new( mode = 'r', opts = {} )
   #
@@ -111,7 +107,10 @@ class Servolux::Piper
   #    rw     read-write    read-write
   #
   # The communication timeout can be provided as an option. This is the
-  # number of seconds to wait for a +puts+ or +gets+ to succeed.
+  # number of seconds to wait for a +puts+ or +gets+ to succeed. This timeout
+  # will default to +nil+ such that calls through the pipe will block forever
+  # until data is available. You can configure the +puts+ and +gets+ to be
+  # non-blocking by setting the timeout to +0+.
   #
   def initialize( *args )
     opts = args.last.is_a?(Hash) ? args.pop : {}
@@ -121,57 +120,42 @@ class Servolux::Piper
       raise ArgumentError, "Unsupported mode #{mode.inspect}"
     end
 
-    @timeout = opts[:timeout] || 0
-    if defined? ::Encoding
-      @read_io, @write_io = IO.pipe('ASCII-8BIT')    # encoding for Ruby 1.9
-    else
-      @read_io, @write_io = IO.pipe
-    end
-
-    GC.start
+    @timeout = opts.key?(:timeout) ? opts[:timeout] : nil
+    socket_pair = Socket.pair(Socket::AF_UNIX, Socket::SOCK_STREAM, 0)
     @child_pid = Kernel.fork
 
     if child?
+      @socket = socket_pair[1]
+      socket_pair[0].close
+
       case mode
-      when 'r'; close_read
-      when 'w'; close_write
+      when 'r'; @socket.close_read
+      when 'w'; @socket.close_write
       end
     else
+      @socket = socket_pair[0]
+      socket_pair[1].close
+
       case mode
-      when 'r'; close_write
-      when 'w'; close_read
+      when 'r'; @socket.close_write
+      when 'w'; @socket.close_read
       end
     end
   end
 
-  # Close both the read and write ends of the communications pipe. This only
-  # affects the process from which it was called -- the parent or the child.
+  # Close both the communications socket. This only affects the process from
+  # which it was called -- the parent or the child.
   #
   def close
-    @read_io.close rescue nil
-    @write_io.close rescue nil
-  end
-
-  # Close the read end of the communications pipe. This only affects the
-  # process from which it was called -- the parent or the child.
-  #
-  def close_read
-    @read_io.close rescue nil
-  end
-
-  # Close the write end of the communications pipe. This only affects the
-  # process from which it was called -- the parent or the child.
-  #
-  def close_write
-    @write_io.close rescue nil
+    @socket.close rescue nil
   end
 
   # Returns +true+ if the communications pipe is readable from the process
   # and there is data waiting to be read.
   #
   def readable?
-    return false if @read_io.closed?
-    r,w,e = Kernel.select([@read_io], nil, nil, @timeout)
+    return false if @socket.closed?
+    r,w,e = Kernel.select([@socket], nil, nil, @timeout)
     return !(r.nil? or r.empty?)
   end
 
@@ -179,8 +163,8 @@ class Servolux::Piper
   # and the write buffer can accept more data.
   #
   def writeable?
-    return false if @write_io.closed?
-    r,w,e = Kernel.select(nil, [@write_io], nil, @timeout)
+    return false if @socket.closed?
+    r,w,e = Kernel.select(nil, [@socket], nil, @timeout)
     return !(w.nil? or w.empty?)
   end
 
@@ -239,25 +223,27 @@ class Servolux::Piper
     @child_pid
   end
 
-  # Read an object from the communication pipe. Returns +nil+ if the pipe is
-  # closed for reading or if no data is available before the timeout
-  # expires. If data is available then it is un-marshalled and returned as a
-  # Ruby object.
+  # Read an object from the communication pipe. If data is available then it
+  # is un-marshalled and returned as a Ruby object. If the pipe is closed for
+  # reading or if no data is available then the _default_ value is returned.
+  # You can pass in the _default_ value; otherwise it will be +nil+.
   #
   # This method will block until the +timeout+ is reached or data can be
   # read from the pipe.
   #
-  def gets
-    return unless readable?
+  def gets( default = nil )
+    return default unless readable?
 
-    data = @read_io.read SIZEOF_INT
-    return if data.nil?
+    data = @socket.read SIZEOF_INT
+    return default if data.nil?
 
     size = data.unpack('I').first
-    data = @read_io.read size
-    return if data.nil?
+    data = @socket.read size
+    return default if data.nil?
 
     Marshal.load(data) rescue data
+  rescue SystemCallError
+    return default
   end
 
   # Write an object to the communication pipe. Returns +nil+ if the pipe is
@@ -273,7 +259,9 @@ class Servolux::Piper
     return unless writeable?
 
     data = Marshal.dump(obj)
-    @write_io.write([data.size].pack('I')) + @write_io.write(data)
+    @socket.write([data.size].pack('I')) + @socket.write(data)
+  rescue SystemCallError
+    return nil
   end
 
   # Send the given signal to the child process. The signal may be an integer
@@ -290,4 +278,3 @@ class Servolux::Piper
 
 end  # class Servolux::Piper
 
-# EOF
