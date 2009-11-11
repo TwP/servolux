@@ -1,3 +1,14 @@
+== 0.8.0 / 2009-11-
+
+* 2 Major Enhancements
+  * Preforking worker pool
+  * Preforking job queue
+* 1 Minor Enhancement
+  * Default return value for Piper#gets (useful for detecting timeouts)
+* 2 Bug Fixes
+  * The piper is now using a socket pair for bidirectional communication
+  * The piper now defaults to a blocking mode (nil timeout)
+
 == 0.7.1 / 2009-11-06
 
 * 1 Bug Fix
