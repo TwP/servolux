@@ -12,7 +12,6 @@
 # http://tomayko.com/writings/unicorn-is-unix
 # --------
 
-STDOUT.sync = true
 require 'servolux'
 
 # Create a socket, bind it to localhost:4242, and start listening.
