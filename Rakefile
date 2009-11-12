@@ -9,6 +9,7 @@ ensure_in_path 'lib'
 require 'servolux'
 
 task :default => 'spec:specdoc'
+task 'gem:release' => ['spec:run', 'rubyforge:release']
 
 Bones {
   name         'servolux'

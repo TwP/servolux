@@ -85,6 +85,10 @@
 #    }
 #    pool.start 42
 #
+# Eventually all 42 child processes will be killed by their parents. The
+# random number generator will eventually cause the child to sleep longer than
+# two seconds.
+#
 # What is happening here is that each time the child processes executes the
 # block of code, the Servolux library code will send a "heartbeat" message to
 # the parent. The parent is using a Kernel#select call on the communications
