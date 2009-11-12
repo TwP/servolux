@@ -4,6 +4,96 @@
 # parallel using multiple processes.
 #
 # == Details
+# A pre-forking worker pool is a technique for executing code in parallel in a
+# UNIX environment. Each worker in the pool forks a child process and then
+# executes user supplied code in that child process. The child process can
+# pull jobs from a queue (beanstalkd for example) or listen on a socket for
+# network requests.
+#
+# The code to execute in the child processes is passed as a block to the
+# Prefork initialize method. The child processes executes this code in a loop;
+# that is, your code block should not worry about keeping itself alive. This
+# is handled by the library.
+#
+# If your code raises an exception, it will be captured by the library code
+# and marshalled back to the parent process. This will halt the child process.
+# The Prefork worker pool does not restart dead workers. A method is provided
+# to iterate over workers that have errors, and it is up to the user to handle
+# errors as they please.
+#
+# Instead of passing a block to the initialize method, you can provide a Ruby
+# module that defines an "execute" method. This method will be executed in the
+# child process' run loop. When using a module, you also have the option of
+# defining a "before_executing" method and an "after_executing" method. These
+# methods will be called before the child starts the execute loop and after
+# the execute loop finishes. Each method will be called exactly once. Both
+# methods are optional.
+#
+# Sending a SIGHUP to a child process will cause that child to stop and
+# restart. The child will send a signal to the parent asking to be shutdown.
+# The parent will gracefully halt the child and then start a new child process
+# to replace it.
+#
+# This has the advantage of calling your before/after_executing methods again
+# and reloading any code or resources your worker code will use. The SIGHUP
+# will call Thread#wakeup on the main child process thread; please write your
+# code to respond accordingly to this wakeup call (a thread waiting on a
+# Queue#pop will not return when wakeup is called on the thread).
+#
+# == Examples
+#
+# A pre-forking echo server: http://github.com/TwP/servolux/blob/master/examples/echo.rb
+#
+# Pulling jobs from a beanstalkd work queue: http://github.com/TwP/servolux/blob/master/examples/beanstalk.rb
+#
+# ==== Before / After Executing
+# In this example, we are creating 42 worker processes that will log the
+# process ID and the current time to a file. Each worker will do this every 2
+# seconds. The before/after_executing methods are used to open the file before
+# the run loop starts and to close the file after the run loop completes. The
+# execute method uses the stored file descriptor when logging the message.
+#
+#    module RunMe
+#      def before_executing
+#        @fd = File.open("#{Process.pid}.txt", 'w')
+#      end
+#
+#      def after_executing
+#        @fd.close
+#      end
+#
+#      def execute
+#        @fd.puts "Process #{Process.pid} @ #{Time.now}"
+#        sleep 2
+#      end
+#    end
+#
+#    pool = Servolux::Prefork.new(:module => RunMe)
+#    pool.start 42
+#
+# ==== Heartbeat
+# When a :timeout is supplied to the constructor, a "heartbeat" is setup
+# between the parent and the child worker. Each loop through the child's
+# execute code must return before :timeout seconds have elapsed. If one
+# iteration through the loop takes longer than :timeout seconds, then the
+# parent process will halt the child worker. An error will be raised in the
+# parent process.
+#
+#    pool = Servolux::Prefork.new(:timeout => 2) {
+#      puts "Process #{Process.pid} is running."
+#      sleep(rand * 5)
+#    }
+#    pool.start 42
+#
+# What is happening here is that each time the child processes executes the
+# block of code, the Servolux library code will send a "heartbeat" message to
+# the parent. The parent is using a Kernel#select call on the communications
+# pipe to wait for this message. The timeout is passed to the select call, and
+# this will cause it to return +nil+ -- this is the error condition the
+# heartbeat prevents.
+#
+# Use the heartbeat with caution -- allow margins for timing issues and
+# processor load spikes.
 #
 class Servolux::Prefork
 
@@ -58,6 +148,7 @@ class Servolux::Prefork
       @workers.last.extend @module
     }
     @workers.each { |worker| worker.start }
+    self
   end
 
   # Stop all workers. The current process will wait for each child process to
@@ -68,6 +159,7 @@ class Servolux::Prefork
   def stop
     @workers.each { |worker| worker.stop }
     @workers.each { |worker| worker.wait }
+    self
   end
 
   # call-seq:
@@ -78,6 +170,7 @@ class Servolux::Prefork
   #
   def each_worker( &block )
     @workers.each(&block)
+    self
   end
 
   # call-seq:
@@ -88,6 +181,7 @@ class Servolux::Prefork
   #
   def errors
     @workers.each { |worker| yield worker unless worker.error.nil? }
+    self
   end
 
   # The worker encapsulates the forking of the child process and communication
@@ -119,6 +213,7 @@ class Servolux::Prefork
       @piper = ::Servolux::Piper.new('rw', :timeout => @prefork.timeout)
       parent if @piper.parent?
       child if @piper.child?
+      self
     end
 
     # Stop this worker. The internal worker thread is stopped and a 'HUP'
@@ -134,6 +229,7 @@ class Servolux::Prefork
       Thread.pass until !@thread.status
       kill 'HUP'
       @thread = nil
+      self
     end
 
     # Wait for the child process to exit. This method returns immediately when
