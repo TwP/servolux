@@ -211,8 +211,6 @@ class Servolux::Prefork
     # by the user to the prefork pool will be executed in the child process.
     #
     def start
-      return unless @thread.nil?
-
       @error = nil
       @piper = ::Servolux::Piper.new('rw', :timeout => @prefork.timeout)
       parent if @piper.parent?
