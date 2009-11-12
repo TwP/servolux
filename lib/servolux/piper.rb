@@ -276,5 +276,18 @@ class Servolux::Piper
     Process.kill(sig, @child_pid)
   end
 
+  # Returns +true+ if the child process is alive. Returns +nil+ if the child
+  # process has not been started.
+  #
+  # Always returns +nil+ when called from the child process.
+  #
+  def alive?
+    return if @child_pid.nil?
+    Process.kill(0, @child_pid)
+    true
+  rescue Errno::ESRCH, Errno::ENOENT
+    false
+  end
+
 end  # class Servolux::Piper
 
