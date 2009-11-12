@@ -227,7 +227,7 @@ class Servolux::Prefork
       return if @thread.nil? or @piper.nil? or @piper.child?
 
       @thread[:stop] = true
-      @thread.wakeup
+      @thread.wakeup if @thread.status
       Thread.pass until !@thread.status
       kill 'HUP'
       @thread = nil
@@ -285,7 +285,7 @@ class Servolux::Prefork
             when START; break
             when ERROR
               raise Timeout,
-                    "Child did not respond in a timely fashion. Timeout is set to #{@prefork.timeout} seconds."
+                    "Child did not respond in a timely fashion. Timeout is set to #{@prefork.timeout.inspect} seconds."
             when Exception
               raise response
             else
@@ -296,10 +296,10 @@ class Servolux::Prefork
         rescue Exception => err
           @error = err
         ensure
-          @piper.timeout = 0
+          @piper.timeout = 0.1
           @piper.puts HALT rescue nil
           @piper.close
-          self.start if START == response
+          self.start if START == response and !Thread.current[:stop]
         end
       }
       Thread.pass until @thread[:stop] == false
@@ -332,7 +332,7 @@ class Servolux::Prefork
           break
         when ERROR
           raise Timeout,
-                "Parent did not respond in a timely fashion. Timeout is set to #{@prefork.timeout} seconds."
+                "Parent did not respond in a timely fashion. Timeout is set to #{@prefork.timeout.inspect} seconds."
         else
           raise UnknownSignal,
                 "Child received unknown signal: #{signal.inspect}"

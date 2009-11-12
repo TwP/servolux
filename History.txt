@@ -1,3 +1,10 @@
+== 0.8.1 / 2009-11-12
+
+* 3 Bug Fixes
+  * Attempting to wakeup a dead thread in Prefork
+  * Shutdown error between the Prefork parent/child
+  * Restart was not working properly
+
 == 0.8.0 / 2009-11-12
 
 * 2 Major Enhancements
