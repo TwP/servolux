@@ -1,4 +1,5 @@
 
+##
 # == Synopsis
 # Manage a child process spawned via IO#popen and provide a timeout
 # mechanism to kill the process after some amount time.

@@ -1,6 +1,7 @@
 
 require 'socket'
 
+##
 # == Synopsis
 # A Piper is used to fork a child proces and then establish a communication
 # pipe between the parent and child. This communication pipe is used to pass

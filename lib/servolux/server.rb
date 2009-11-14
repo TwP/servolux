@@ -1,6 +1,7 @@
 
 require 'thread'
 
+##
 # == Synopsis
 # The Server class makes it simple to create a server-type application in
 # Ruby. A server in this context is any process that should run for a long

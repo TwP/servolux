@@ -1,4 +1,5 @@
 
+##
 # == Synopsis
 # The Daemon takes care of the work of creating and managing daemon
 # processes from Ruby.

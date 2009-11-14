@@ -1,4 +1,5 @@
 
+##
 # == Synopsis
 # The Prefork class provides a pre-forking worker pool for executing tasks in
 # parallel using multiple processes.
@@ -188,6 +189,7 @@ class Servolux::Prefork
     self
   end
 
+  ##
   # The worker encapsulates the forking of the child process and communication
   # between the parent and the child. Each worker instance is extended with
   # the block or module supplied to the pre-forking pool that created the
