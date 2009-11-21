@@ -181,6 +181,7 @@ class Servolux::Piper
   # passed to the block if the arity is non-zero.
   #
   # @yield [self] Execute the block in the child process
+  # @yieldparam [Piper] self The piper instance (optional)
   # @return The return value from the block or +nil+ when called from the
   #   parent.
   #
@@ -208,6 +209,7 @@ class Servolux::Piper
   # passed to the block if the arity is non-zero.
   #
   # @yield [self] Execute the block in the parent process
+  # @yieldparam [Piper] self The piper instance (optional)
   # @return The return value from the block or +nil+ when called from the
   #   child.
   #
