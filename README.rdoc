@@ -31,8 +31,10 @@ Servolux::Child -- adds some much needed funtionality to child processes
 created via Ruby's IO#popen method. Specifically, a timeout thread is used to
 signal the child process to die if it does not exit in a given amount of time.
 
+Servolux::Prefork -- provides a pre-forking worker pool for executing tasks in
+parallel using multiple processes.
 
-All the documentation is available online at http://codeforpeople.rubyforge.org/servolux
+All the documentation is available online at http://rdoc.info/projects/TwP/servolux
 
 === INSTALL
 

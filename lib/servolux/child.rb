@@ -1,5 +1,4 @@
 
-##
 # == Synopsis
 # Manage a child process spawned via IO#popen and provide a timeout
 # mechanism to kill the process after some amount time.
@@ -50,23 +49,22 @@ class Servolux::Child
   # Create a new Child that will execute and manage the +command+ string as
   # a child process.
   #
-  # ==== Options
-  # * command <String>
-  #     The command that will be executed via IO#popen.
+  # @option opts [String] :command
+  #   The command that will be executed via IO#popen.
   #
-  # * timeout <Numeric>
-  #     The number of seconds to wait before terminating the child process.
-  #     No action is taken if the child process exits normally before the
-  #     timeout expires.
+  # @option opts [Numeric] :timeout (nil)
+  #   The number of seconds to wait before terminating the child process.
+  #   No action is taken if the child process exits normally before the
+  #   timeout expires.
   #
-  # * signals <Array>
-  #     A list of signals that will be sent to the child process when the
-  #     timeout expires. The signals increase in severity with SIGKILL being
-  #     the signal of last resort.
+  # @option opts [Array<String, Integer>] :signals (['TERM', 'QUIT', 'KILL'])
+  #   A list of signals that will be sent to the child process when the
+  #   timeout expires. The signals increase in severity with SIGKILL being
+  #   the signal of last resort.
   #
-  # * suspend <Numeric>
-  #     The number of seconds to wait for the child process to respond to
-  #     a signal before trying the next one in the list.
+  # @option opts [Numeric] :suspend (4)
+  #   The number of seconds to wait for the child process to respond to a
+  #   signal before trying the next one in the list.
   #
   def initialize( opts = {} )
     @command = opts[:command]
@@ -85,6 +83,14 @@ class Servolux::Child
   # If a block is given, Ruby will run the +command+ as a child connected to
   # Ruby with a pipe. Ruby’s end of the pipe will be passed as a parameter
   # to the block. In this case the value of the block is returned.
+  #
+  # @param [String] mode The mode flag used to open the child process via
+  #   IO#popen.
+  # @yield [IO] Execute the block of call passing in the communication pipe
+  #   with the child process.
+  # @yieldreturn Returns the result of the block.
+  # @return [IO] The communication pipe with the child process or the return
+  #   value from the block if one was given.
   #
   def start( mode = 'r', &block )
     start_timeout_thread if @timeout
@@ -105,6 +111,8 @@ class Servolux::Child
   # the stored child PID is set to +nil+. The +start+ method can be safely
   # called again.
   #
+  # @return self
+  #
   def stop
     unless @thread.nil?
       t, @thread = @thread, nil
@@ -122,6 +130,12 @@ class Servolux::Child
   # global variable $? is set to a Process::Status object containing
   # information on the child process.
   #
+  # @param [Integer] flags Bit flags that will be passed to the system level
+  #   wait call. See the Ruby core documentation for Process#wait for more
+  #   information on these flags.
+  # @return [Integer, nil] The exit status of the child process or +nil+ if
+  #   the child process is not running.
+  #
   def wait( flags = 0 )
     return if @io.nil?
     Process.wait(@pid, flags)
@@ -132,6 +146,8 @@ class Servolux::Child
   # Returns +true+ if the child process is alive. Returns +nil+ if the child
   # process has not been started.
   #
+  # @return [Boolean]
+  #
   def alive?
     return if @io.nil?
     Process.kill(0, @pid)
@@ -141,6 +157,8 @@ class Servolux::Child
   end
 
   # Returns +true+ if the child process was killed by the timeout thread.
+  #
+  # @return [Boolean]
   #
   def timed_out?
     @timed_out
@@ -198,6 +216,6 @@ class Servolux::Child
     }
   end
 
-end  # class Servolux::Child
+end
 
 # EOF

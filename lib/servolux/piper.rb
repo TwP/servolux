@@ -1,7 +1,6 @@
 
 require 'socket'
 
-##
 # == Synopsis
 # A Piper is used to fork a child proces and then establish a communication
 # pipe between the parent and child. This communication pipe is used to pass
@@ -50,12 +49,9 @@ require 'socket'
 class Servolux::Piper
 
   # :stopdoc:
-  SIZEOF_INT = [42].pack('I').size
+  SIZEOF_INT = [42].pack('I').size  # @private
   # :startdoc:
 
-  # call-seq:
-  #    Piper.daemon( nochdir = false, noclose = false )
-  #
   # Creates a new Piper with the child process configured as a daemon. The
   # +pid+ method of the piper returns the PID of the daemon process.
   #
@@ -64,6 +60,10 @@ class Servolux::Piper
   # process to exit cleanly. This behavior can be overridden by setting the
   # _nochdir_ and _noclose_ flags to true. The first will keep the current
   # working directory; the second will keep stdout/stderr/stdin open.
+  #
+  # @param [Boolean] nochdir Do not change working directories
+  # @param [Boolean] noclose Do not close stdin, stdout, and stderr
+  # @return [Piper]
   #
   def self.daemon( nochdir = false, noclose = false )
     piper = self.new(:timeout => 1)
@@ -93,25 +93,25 @@ class Servolux::Piper
   # The timeout in seconds to wait for puts / gets commands.
   attr_accessor :timeout
 
-  # call-seq:
-  #    Piper.new( mode = 'r', opts = {} )
+  # @overload Piper.new( mode = 'r', opts = {} )
+  #   Creates a new Piper instance with the communication pipe configured
+  #   using the provided _mode_. The default mode is read-only (from the
+  #   parent, and write-only from the child). The supported modes are as
+  #   follows:
   #
-  # Creates a new Piper instance with the communication pipe configured
-  # using the provided _mode_. The default mode is read-only (from the
-  # parent, and write-only from the child). The supported modes are as
-  # follows:
+  #      Mode | Parent View | Child View
+  #      -------------------------------
+  #      r      read-only     write-only
+  #      w      write-only    read-only
+  #      rw     read-write    read-write
   #
-  #    Mode | Parent View | Child View
-  #    -----+-------------+-----------
-  #    r      read-only     write-only
-  #    w      write-only    read-only
-  #    rw     read-write    read-write
-  #
-  # The communication timeout can be provided as an option. This is the
-  # number of seconds to wait for a +puts+ or +gets+ to succeed. This timeout
-  # will default to +nil+ such that calls through the pipe will block forever
-  # until data is available. You can configure the +puts+ and +gets+ to be
-  # non-blocking by setting the timeout to +0+.
+  #   @param [String] mode The communication mode of the pipe.
+  #   @option opts [Numeric] :timeout (nil)
+  #     The number of seconds to wait for a +puts+ or +gets+ to succeed. If not
+  #     specified, calls through the pipe will block forever until data is
+  #     available. You can configure the +puts+ and +gets+ to be non-blocking
+  #     by setting the timeout to +0+.
+  #   @return [Piper]
   #
   def initialize( *args )
     opts = args.last.is_a?(Hash) ? args.pop : {}
@@ -147,12 +147,17 @@ class Servolux::Piper
   # Close both the communications socket. This only affects the process from
   # which it was called -- the parent or the child.
   #
+  # @return [Piper] self
+  #
   def close
     @socket.close rescue nil
+    self
   end
 
   # Returns +true+ if the communications pipe is readable from the process
   # and there is data waiting to be read.
+  #
+  # @return [Boolean]
   #
   def readable?
     return false if @socket.closed?
@@ -163,18 +168,21 @@ class Servolux::Piper
   # Returns +true+ if the communications pipe is writeable from the process
   # and the write buffer can accept more data.
   #
+  # @return [Boolean]
+  #
   def writeable?
     return false if @socket.closed?
     r,w,e = Kernel.select(nil, [@socket], nil, @timeout)
     return !(w.nil? or w.empty?)
   end
 
-  # call-seq:
-  #    child { block }
-  #    child {|piper| block }
-  #
   # Execute the _block_ only in the child process. This method returns
-  # immediately when called from the parent process.
+  # immediately when called from the parent process. The piper instance is
+  # passed to the block if the arity is non-zero.
+  #
+  # @yield [self] Execute the block in the child process
+  # @return The return value from the block or +nil+ when called from the
+  #   parent.
   #
   def child( &block )
     return unless child?
@@ -189,16 +197,19 @@ class Servolux::Piper
 
   # Returns +true+ if this is the child prcoess and +false+ otherwise.
   #
+  # @return [Boolean]
+  #
   def child?
     @child_pid.nil?
   end
 
-  # call-seq:
-  #    parent { block }
-  #    parent {|piper| block }
-  #
   # Execute the _block_ only in the parent process. This method returns
-  # immediately when called from the child process.
+  # immediately when called from the child process. The piper instance is
+  # passed to the block if the arity is non-zero.
+  #
+  # @yield [self] Execute the block in the parent process
+  # @return The return value from the block or +nil+ when called from the
+  #   child.
   #
   def parent( &block )
     return unless parent?
@@ -213,12 +224,16 @@ class Servolux::Piper
 
   # Returns +true+ if this is the parent prcoess and +false+ otherwise.
   #
+  # @return [Boolean]
+  #
   def parent?
     !@child_pid.nil?
   end
 
   # Returns the PID of the child process when called from the parent.
   # Returns +nil+ when called from the child.
+  #
+  # @return [Integer, nil] The PID of the child process or +nil+
   #
   def pid
     @child_pid
@@ -256,6 +271,11 @@ class Servolux::Piper
   # is returned. If this number is zero it means that the _obj_ was
   # unsuccessfully communicated (sorry).
   #
+  # @param [Object] obj The data to send to the "other" process. The object
+  #   must be marshallable by Ruby (no Proc objects or lambdas).
+  # @return [Integer, nil] The number of bytes written to the pipe or +nil+ if
+  #   there was an error or the pipe is not writeable.
+  #
   def puts( obj )
     return unless writeable?
 
@@ -271,6 +291,10 @@ class Servolux::Piper
   #
   # This method does nothing when called from the child process.
   #
+  # @param [String, Integer] sig The signal to send to the child process.
+  # @return [Integer, nil] The result of Process#kill or +nil+ if called from
+  #   the child process.
+  #
   def signal( sig )
     return if @child_pid.nil?
     sig = Signal.list.invert[sig] if sig.is_a?(Integer)
@@ -282,6 +306,8 @@ class Servolux::Piper
   #
   # Always returns +nil+ when called from the child process.
   #
+  # @return [Boolean, nil]
+  #
   def alive?
     return if @child_pid.nil?
     Process.kill(0, @child_pid)
@@ -290,5 +316,5 @@ class Servolux::Piper
     false
   end
 
-end  # class Servolux::Piper
+end
 

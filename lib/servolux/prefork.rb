@@ -1,5 +1,4 @@
 
-##
 # == Synopsis
 # The Prefork class provides a pre-forking worker pool for executing tasks in
 # parallel using multiple processes.
@@ -107,10 +106,10 @@ class Servolux::Prefork
   UnknownResponse = Class.new(::Servolux::Error)
 
   # :stopdoc:
-  START = "\000START".freeze
-  HALT = "\000HALT".freeze
-  ERROR = "\000SHIT".freeze
-  HEARTBEAT = "\000<3".freeze
+  START = "\000START".freeze     # @private
+  HALT = "\000HALT".freeze       # @private
+  ERROR = "\000SHIT".freeze      # @private
+  HEARTBEAT = "\000<3".freeze    # @private
   # :startdoc:
 
   attr_accessor :timeout    # Communication timeout in seconds.
@@ -144,6 +143,9 @@ class Servolux::Prefork
 
   # Start up the given _number_ of workers. Each worker will create a child
   # process and run the user supplied code in that child process.
+  #
+  # @param [Integer] number The number of workers to prefork
+  # @return [Prefork] self
   #
   def start( number )
     @workers.clear
@@ -189,7 +191,6 @@ class Servolux::Prefork
     self
   end
 
-  ##
   # The worker encapsulates the forking of the child process and communication
   # between the parent and the child. Each worker instance is extended with
   # the block or module supplied to the pre-forking pool that created the
@@ -202,6 +203,8 @@ class Servolux::Prefork
 
     # Create a new worker that belongs to the _prefork_ pool.
     #
+    # @param [Prefork] prefork The prefork pool that created this worker.
+    #
     def initialize( prefork )
       @prefork = prefork
       @thread = nil
@@ -211,6 +214,8 @@ class Servolux::Prefork
 
     # Start this worker. A new process will be forked, and the code supplied
     # by the user to the prefork pool will be executed in the child process.
+    #
+    # @return [Worker] self
     #
     def start
       @error = nil
@@ -224,6 +229,8 @@ class Servolux::Prefork
     # signal is sent to the child process. This method will return immediately
     # without waiting for the child process to exit. Use the +wait+ method
     # after calling +stop+ if your code needs to know when the child exits.
+    #
+    # @return [Worker, nil] self
     #
     def stop
       return if @thread.nil? or @piper.nil? or @piper.child?
@@ -248,6 +255,10 @@ class Servolux::Prefork
     # Send this given _signal_ to the child process. The default signal is
     # 'TERM'. This method will return immediately.
     #
+    # @param [String, Integer] signal The signal to send to the child process.
+    # @return [Integer, nil] The result of Process#kill or +nil+ if called from
+    #   the child process.
+    #
     def kill( signal = 'TERM' )
       return if @piper.nil?
       @piper.signal signal
@@ -259,6 +270,8 @@ class Servolux::Prefork
     # process has not been started.
     #
     # Always returns +nil+ when called from the child process.
+    #
+    # @return [Boolean, nil]
     #
     def alive?
       return if @piper.nil?
@@ -347,7 +360,6 @@ class Servolux::Prefork
       @piper.close
       exit!
     end
-  end  # class Worker
-
-end  # class Servolux::Prefork
+  end
+end
 

@@ -12,6 +12,8 @@ module Servolux
 
   # Returns the version string for the library.
   #
+  # @return [String]
+  #
   def self.version
     VERSION
   end
@@ -20,13 +22,17 @@ module Servolux
   # they will be joined to the end of the libray path using
   # <tt>File.join</tt>.
   #
+  # @return [String] absolute servolux 'lib' path
+  #
   def self.libpath( *args )
     args.empty? ? LIBPATH : ::File.join(LIBPATH, args.flatten)
   end
 
   # Returns the lpath for the module. If any arguments are given,
-  # they will be joined to the end of the path using
+  # they will be joined to the end of the servolux base path using
   # <tt>File.join</tt>.
+  #
+  # @return [String] absolute servolux base path
   #
   def self.path( *args )
     args.empty? ? PATH : ::File.join(PATH, args.flatten)
@@ -34,11 +40,13 @@ module Servolux
 
   # Returns +true+ if the execution platform supports fork.
   #
+  # @return [Boolean]
+  #
   def self.fork?
     RUBY_PLATFORM != 'java' and test(?e, '/dev/null')
   end
 
-end  # module Servolux
+end
 
 %w[threaded server piper daemon child prefork].each do |lib|
   require Servolux.libpath('servolux', lib)

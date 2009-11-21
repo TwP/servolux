@@ -1,5 +1,4 @@
 
-##
 # == Synopsis
 # The Threaded module is used to peform some activity at a specified
 # interval.
@@ -200,23 +199,23 @@ module Servolux::Threaded
   end
 
   # :stopdoc:
-
   def _activity_thread
     @_activity_thread ||= ::Servolux::Threaded::ThreadContainer.new(60, 0, nil, false);
-  end
+  end  # @private
 
+  # @private
   ThreadContainer = Struct.new( :interval, :iterations, :maximum_iterations, :continue_on_error, :thread, :running ) {
     def start( threaded )
       self.running = true
       self.iterations = 0
       self.thread = Thread.new { run threaded }
       Thread.pass
-    end
+    end  # @private
 
     def stop
       self.running = false
       thread.wakeup
-    end
+    end  # @private
 
     def run( threaded )
       loop {
@@ -238,22 +237,21 @@ module Servolux::Threaded
       }
     ensure
       self.running = false
-    end
+    end  # @private
 
     def join( limit = nil )
       return if thread.nil?
       limit ? thread.join(limit) : thread.join
-    end
+    end  # @private
 
     def finished_iterations?
       return true if maximum_iterations and (iterations >= maximum_iterations)
       return false
-    end
+    end  # @private
 
     alias :running? :running
   }
   # :startdoc:
 
-end  # module Servolux::Threaded
+end
 
-# EOF
