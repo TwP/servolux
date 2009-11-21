@@ -36,7 +36,7 @@ module JobProcessor
   # them. We have a timeout set for 2 minutes so that we can send a heartbeat
   # back to the parent process even if the beanstalk queue is empty.
   def execute
-    job = @beanstalk.reserve(120)
+    job = @beanstalk.reserve(120) rescue nil
     if job
       # process job here ...
       job.delete
