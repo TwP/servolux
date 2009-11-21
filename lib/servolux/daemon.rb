@@ -88,19 +88,21 @@ class Servolux::Daemon
   # process.
   #
   # @option opts [String] :name
-  #   The name o the daemon process. This name will appear in log messages.
+  #   The name of the daemon process. This name will appear in log messages.
+  #   [required]
   #
   # @option opts [Logger] :logger
-  #   The Logger instance used to output messages.
+  #   The Logger instance used to output messages. [required]
   #
   # @option opts [String] :pid_file
   #   Location of the PID file. This is used to determine if the daemon
   #   process is running, and to send signals to the daemon process.
+  #   [required]
   #
   # @option opts [String, Array<String>, Proc, Method, Servolux::Server] :startup_command
   #   Assign the startup command. Different calling semantics are used for
   #   each type of command. See the {Daemon#startup_command= startup_command}
-  #   method for more details.
+  #   method for more details. [required]
   #
   # @option opts [Numeric] :timeout (30)
   #   The time (in seconds) to wait for the daemon process to either startup
@@ -265,7 +267,7 @@ class Servolux::Daemon
   # +false+ if this is not the case. The status of the process is determined
   # by sending a signal to the process identified by the +pid_file+.
   #
-  # return [Boolean]
+  # @return [Boolean]
   #
   def alive?
     pid = retrieve_pid
@@ -284,7 +286,7 @@ class Servolux::Daemon
   # string or a signal number.
   #
   # @param [String, Integer] signal The kill signal to send to the daemon
-  # process
+  #   process
   # @return [Daemon] self
   #
   def kill( signal = 'INT' )
@@ -448,4 +450,3 @@ class Servolux::Daemon
 
 end
 
-# EOF
