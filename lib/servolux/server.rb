@@ -181,6 +181,8 @@ class Servolux::Server
   # flag is used to ensure that the server has shutdown completely when
   # shutdown by a signal.
   #
+  # @return [Server] self
+  #
   def startup( wait = false )
     return self if running?
     @mutex.synchronize {
@@ -211,13 +213,16 @@ class Servolux::Server
   # the server is completely stopped, use the +wait_for_shutdown+ method to
   # be notified when the this +shutdown+ method is finished executing.
   #
+  # @return [Server] self
+  #
   def shutdown
     return self unless running?
-    stop
-
-    @mutex.synchronize {
-      @shutdown.signal
-      @shutdown = nil
+    Thread.new {
+      stop
+      @mutex.synchronize {
+        @shutdown.signal
+        @shutdown = nil
+      }
     }
     self
   end
