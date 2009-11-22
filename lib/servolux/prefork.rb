@@ -237,8 +237,8 @@ class Servolux::Prefork
 
       @thread[:stop] = true
       @thread.wakeup if @thread.status
-      Thread.pass until !@thread.status
-      kill 'HUP'
+      self._close
+      signal 'TERM'
       @thread = nil
       self
     end
@@ -259,12 +259,13 @@ class Servolux::Prefork
     # @return [Integer, nil] The result of Process#kill or +nil+ if called from
     #   the child process.
     #
-    def kill( signal = 'TERM' )
+    def signal( signal = 'TERM' )
       return if @piper.nil?
       @piper.signal signal
     rescue Errno::ESRCH, Errno::ENOENT
       return nil
     end
+    alias :kill :signal
 
     # Returns +true+ if the child process is alive. Returns +nil+ if the child
     # process has not been started.
@@ -277,6 +278,18 @@ class Servolux::Prefork
       return if @piper.nil?
       @piper.alive?
     end
+
+    # :stopdoc:
+    # @private
+    def _close
+      return if @piper.nil? or @piper.closed?
+      @piper.parent {
+        @piper.timeout = 0.1
+        @piper.puts HALT rescue nil
+      }
+      @piper.close
+    end
+    # :startdoc:
 
 
     private
@@ -302,18 +315,15 @@ class Servolux::Prefork
               raise Timeout,
                     "Child did not respond in a timely fashion. Timeout is set to #{@prefork.timeout.inspect} seconds."
             when Exception
-              raise response
+              @error = response
+              break
             else
               raise UnknownResponse,
                     "Child returned unknown response: #{response.inspect}"
             end
           }
-        rescue Exception => err
-          @error = err
         ensure
-          @piper.timeout = 0.1
-          @piper.puts HALT rescue nil
-          @piper.close
+          self._close
           self.start if START == response and !Thread.current[:stop]
         end
       }
@@ -331,7 +341,12 @@ class Servolux::Prefork
       # child process and start a new one to replace it
       Signal.trap('HUP') {
         @piper.puts START rescue nil
-        @thread.wakeup
+        Thread.new { self.hup } if self.respond_to? :hup
+      }
+
+      Signal.trap('TERM') {
+        self._close
+        Thread.new { self.term } if self.respond_to? :term
       }
 
       before_executing if self.respond_to? :before_executing
@@ -353,11 +368,11 @@ class Servolux::Prefork
                 "Child received unknown signal: #{signal.inspect}"
         end
       }
-      after_executing if self.respond_to? :after_executing
     rescue Exception => err
       @piper.puts err rescue nil
     ensure
-      @piper.close
+      after_executing rescue nil if self.respond_to? :after_executing
+      self._close
       exit!
     end
   end
