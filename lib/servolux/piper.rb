@@ -154,6 +154,14 @@ class Servolux::Piper
     self
   end
 
+  # Returns +true+ if the piper has been closed. Returns +false+ otherwise.
+  #
+  # @return [Boolean]
+  #
+  def closed?
+    @socket.closed?
+  end
+
   # Returns +true+ if the communications pipe is readable from the process
   # and there is data waiting to be read.
   #
@@ -161,7 +169,7 @@ class Servolux::Piper
   #
   def readable?
     return false if @socket.closed?
-    r,w,e = Kernel.select([@socket], nil, nil, @timeout)
+    r,w,e = Kernel.select([@socket], nil, nil, @timeout) rescue nil
     return !(r.nil? or r.empty?)
   end
 
@@ -172,7 +180,7 @@ class Servolux::Piper
   #
   def writeable?
     return false if @socket.closed?
-    r,w,e = Kernel.select(nil, [@socket], nil, @timeout)
+    r,w,e = Kernel.select(nil, [@socket], nil, @timeout) rescue nil
     return !(w.nil? or w.empty?)
   end
 
