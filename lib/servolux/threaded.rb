@@ -75,7 +75,6 @@ module Servolux::Threaded
 
     before_stopping if self.respond_to?(:before_stopping)
     @_activity_thread.stop
-    after_stopping if self.respond_to?(:after_stopping)
     self
   end
 
@@ -236,6 +235,9 @@ module Servolux::Threaded
         end
       }
     ensure
+      if threaded.respond_to?(:after_stopping) and !self.running
+        threaded.after_stopping rescue nil
+      end
       self.running = false
     end  # @private
 
