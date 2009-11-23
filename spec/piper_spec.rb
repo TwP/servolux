@@ -102,7 +102,7 @@ describe Servolux::Piper do
     }
 
     @piper.parent {
-      @piper.gets.should == 1
+      @piper.gets.should_not == Process.pid
     }
   end
 

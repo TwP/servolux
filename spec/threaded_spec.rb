@@ -7,9 +7,22 @@ describe Servolux::Threaded do
     include Servolux::Threaded
     def initialize
       self.interval = 0
+      @mutex = Mutex.new
+      @signal = ConditionVariable.new
     end
     def pass( val = 'sleep' )
       Thread.pass until status == val
+    end
+    def send_signal
+      @mutex.synchronize {
+        @signal.signal
+        @signal = nil
+      }
+    end
+    def wait_signal
+      @mutex.synchronize {
+        @signal.wait(@mutex) unless @signal.nil?
+      }
     end
   end
 
@@ -93,7 +106,9 @@ describe Servolux::Threaded do
     klass = Class.new(base) do
       def run()
         @sleep ||= false
-        if @sleep then sleep
+        if @sleep
+          send_signal
+          sleep
         else
           @sleep = true
           raise 'ni'
@@ -105,7 +120,7 @@ describe Servolux::Threaded do
     obj.continue_on_error = true
 
     obj.start
-    obj.pass
+    obj.wait_signal
 
     obj.running?.should be_true
     @log_output.readline
