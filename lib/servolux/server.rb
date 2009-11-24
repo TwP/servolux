@@ -217,12 +217,10 @@ class Servolux::Server
   #
   def shutdown
     return self unless running?
-    Thread.new {
-      stop
-      @mutex.synchronize {
-        @shutdown.signal
-        @shutdown = nil
-      }
+    stop
+    @mutex.synchronize {
+      @shutdown.signal
+      @shutdown = nil
     }
     self
   end

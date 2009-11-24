@@ -239,6 +239,7 @@ class Servolux::Prefork
       @thread.wakeup if @thread.status
       self._close
       signal 'TERM'
+      Thread.pass until !@thread.status
       @thread = nil
       self
     end
@@ -341,15 +342,15 @@ class Servolux::Prefork
       # child process and start a new one to replace it
       Signal.trap('HUP') {
         @piper.puts START rescue nil
-        Thread.new { self.hup } if self.respond_to? :hup
+        self.hup if self.respond_to? :hup
       }
 
       Signal.trap('TERM') {
         self._close
-        Thread.new { self.term } if self.respond_to? :term
+        self.term if self.respond_to? :term
       }
 
-      before_executing if self.respond_to? :before_executing
+      before_executing rescue nil if self.respond_to? :before_executing
       :wait until @piper.gets == START
 
       loop {
