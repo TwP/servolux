@@ -113,6 +113,7 @@ class Servolux::Prefork
   # :startdoc:
 
   attr_accessor :timeout    # Communication timeout in seconds.
+  attr_reader :harvest      # List of child PIDs that need to be reaped
 
   # call-seq:
   #    Prefork.new { block }
@@ -137,6 +138,7 @@ class Servolux::Prefork
     @module = opts[:module]
     @module = Module.new { define_method :execute, &block } if block
     @workers = []
+    @harvest = []
 
     raise ArgumentError, 'No code was given to execute by the workers.' unless @module
   end
@@ -165,7 +167,21 @@ class Servolux::Prefork
   #
   def stop
     @workers.each { |worker| worker.stop }
-    @workers.each { |worker| worker.wait }
+    reap
+    self
+  end
+
+  # This method should be called periodically in order to clear the return
+  # status from child processes that have either died or been restarted (via a
+  # HUP signal). This will remove zombie children from the process table.
+  #
+  # @return [Prefork] self
+  #
+  def reap
+    return self if @harvest.empty?
+
+    ary, @harvest = @harvest, []    # double buffer swap
+    ary.each { |pid| Process.wait pid }
     self
   end
 
@@ -239,7 +255,7 @@ class Servolux::Prefork
       @thread.wakeup if @thread.status
       self._close
       signal 'TERM'
-      Thread.pass until !@thread.status
+      @thread.join(0.5) rescue nil
       @thread = nil
       self
     end
@@ -285,7 +301,7 @@ class Servolux::Prefork
     def _close
       return if @piper.nil? or @piper.closed?
       @piper.parent {
-        @piper.timeout = 0.1
+        @piper.timeout = 0.5
         @piper.puts HALT rescue nil
       }
       @piper.close
@@ -324,6 +340,7 @@ class Servolux::Prefork
             end
           }
         ensure
+          @prefork.harvest << @piper.pid
           self._close
           self.start if START == response and !Thread.current[:stop]
         end
@@ -341,12 +358,15 @@ class Servolux::Prefork
       # if we get a HUP signal, then tell the parent process to stop this
       # child process and start a new one to replace it
       Signal.trap('HUP') {
+        @piper.timeout = 0.5
         @piper.puts START rescue nil
+        @piper.gets rescue nil
+        @piper.close
         self.hup if self.respond_to? :hup
       }
 
       Signal.trap('TERM') {
-        self._close
+        @piper.close
         self.term if self.respond_to? :term
       }
 
@@ -373,7 +393,7 @@ class Servolux::Prefork
       @piper.puts err rescue nil
     ensure
       after_executing rescue nil if self.respond_to? :after_executing
-      self._close
+      @piper.close
       exit!
     end
   end
