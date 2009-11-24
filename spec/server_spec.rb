@@ -15,6 +15,7 @@ describe Servolux::Server do
   end
 
   after :each do
+    @server.shutdown
     File.delete @server.pid_file if test(?f, @server.pid_file)
   end
 
@@ -22,7 +23,7 @@ describe Servolux::Server do
     test(?e, @server.pid_file).should be_false
 
     t = Thread.new {@server.startup}
-    Thread.pass until t.status == 'sleep'
+    Thread.pass until @server.running? and t.status == 'sleep'
     test(?e, @server.pid_file).should be_true
 
     @server.shutdown
@@ -32,20 +33,20 @@ describe Servolux::Server do
 
   it 'generates a PID file with mode rw-r----- by default' do
     t = Thread.new {@server.startup}
-    Thread.pass until t.status == 'sleep'
+    Thread.pass until @server.running? and t.status == 'sleep'
     (File.stat(@server.pid_file).mode & 0777).should == 0640
   end
 
   it 'generates PID file with the specified permissions' do
     @server.pid_file_mode = 0400
     t = Thread.new {@server.startup}
-    Thread.pass until t.status == 'sleep'
+    Thread.pass until @server.running? and t.status == 'sleep'
     (File.stat(@server.pid_file).mode & 0777).should == 0400
   end
 
   it 'shuts down gracefully when signaled' do
     t = Thread.new {@server.startup}
-    Thread.pass until t.status == 'sleep'
+    Thread.pass until @server.running? and t.status == 'sleep'
     @server.running?.should be_true
 
     Process.kill('INT', $$)
@@ -61,7 +62,7 @@ describe Servolux::Server do
     end
 
     t = Thread.new {@server.startup}
-    Thread.pass until t.status == 'sleep'
+    Thread.pass until @server.running? and t.status == 'sleep'
     @log_output.readline
 
     Process.kill('USR1', $$)
