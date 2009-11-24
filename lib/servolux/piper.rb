@@ -260,11 +260,11 @@ class Servolux::Piper
   def gets( default = nil )
     return default unless readable?
 
-    data = @socket.read_nonblock SIZEOF_INT
+    data = @socket.read SIZEOF_INT
     return default if data.nil?
 
     size = data.unpack('I').first
-    data = @socket.read_nonblock size
+    data = @socket.read size
     return default if data.nil?
 
     Marshal.load(data) rescue data
@@ -290,7 +290,7 @@ class Servolux::Piper
     return unless writeable?
 
     data = Marshal.dump(obj)
-    @socket.write_nonblock([data.size].pack('I')) + @socket.write_nonblock(data)
+    @socket.write([data.size].pack('I')) + @socket.write(data)
   rescue SystemCallError
     return nil
   end
