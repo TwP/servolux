@@ -191,8 +191,8 @@ class Servolux::Server
 
     begin
       create_pid_file
-      trap_signals
       start
+      trap_signals
       join
       wait_for_shutdown if wait
     ensure
