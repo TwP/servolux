@@ -256,6 +256,9 @@ class Servolux::Server
 
   def delete_pid_file
     if test(?f, pid_file)
+      pid = Integer(File.read(pid_file).strip)
+      return unless pid == Process.pid
+
       logger.debug "Server #{name.inspect} removing pid file #{pid_file.inspect}"
       File.delete(pid_file)
     end
