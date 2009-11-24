@@ -138,7 +138,7 @@ class Servolux::Prefork
     @module = opts[:module]
     @module = Module.new { define_method :execute, &block } if block
     @workers = []
-    @harvest = []
+    @harvest = Queue.new
 
     raise ArgumentError, 'No code was given to execute by the workers.' unless @module
   end
@@ -178,10 +178,10 @@ class Servolux::Prefork
   # @return [Prefork] self
   #
   def reap
-    return self if @harvest.empty?
-
-    ary, @harvest = @harvest, []    # double buffer swap
-    ary.each { |pid| Process.wait pid }
+    while !@harvest.empty?
+      pid = @harvest.pop
+      Process.wait pid rescue nil
+    end
     self
   end
 
@@ -214,7 +214,6 @@ class Servolux::Prefork
   #
   class Worker
 
-    attr_reader :prefork
     attr_reader :error
 
     # Create a new worker that belongs to the _prefork_ pool.
@@ -222,7 +221,8 @@ class Servolux::Prefork
     # @param [Prefork] prefork The prefork pool that created this worker.
     #
     def initialize( prefork )
-      @prefork = prefork
+      @timeout = prefork.timeout
+      @harvest = prefork.harvest
       @thread = nil
       @piper = nil
       @error = nil
@@ -235,9 +235,9 @@ class Servolux::Prefork
     #
     def start
       @error = nil
-      @piper = ::Servolux::Piper.new('rw', :timeout => @prefork.timeout)
-      parent if @piper.parent?
-      child if @piper.child?
+      sleep rand
+      @piper = ::Servolux::Piper.new('rw', :timeout => @timeout)
+      @piper.parent? ? parent : child
       self
     end
 
@@ -253,7 +253,8 @@ class Servolux::Prefork
 
       @thread[:stop] = true
       @thread.wakeup if @thread.status
-      self._close
+      close_parent
+      sleep rand
       signal 'TERM'
       @thread.join(0.5) rescue nil
       @thread = nil
@@ -296,56 +297,56 @@ class Servolux::Prefork
       @piper.alive?
     end
 
-    # :stopdoc:
-    # @private
-    def _close
-      return if @piper.nil? or @piper.closed?
-      @piper.parent {
-        @piper.timeout = 0.5
-        @piper.puts HALT rescue nil
-      }
-      @piper.close
-    end
-    # :startdoc:
-
 
     private
+
+    def close_parent
+      @piper.timeout = 0.5
+      @piper.puts HALT rescue nil
+      @piper.close
+    end
 
     # This code should only be executed in the parent process.
     #
     def parent
       @thread = Thread.new {
-        response = nil
         begin
           @piper.puts START
           Thread.current[:stop] = false
-          loop {
-            break if Thread.current[:stop]
-            @piper.puts HEARTBEAT
-            response = @piper.gets(ERROR)
-            break if Thread.current[:stop]
-
-            case response
-            when HEARTBEAT; next
-            when START; break
-            when ERROR
-              raise Timeout,
-                    "Child did not respond in a timely fashion. Timeout is set to #{@prefork.timeout.inspect} seconds."
-            when Exception
-              @error = response
-              break
-            else
-              raise UnknownResponse,
-                    "Child returned unknown response: #{response.inspect}"
-            end
-          }
+          response = parent_loop
+        # TODO: put a logger here to catch and log all exceptions
         ensure
-          @prefork.harvest << @piper.pid
-          self._close
-          self.start if START == response and !Thread.current[:stop]
+          @harvest << @piper.pid
+          close_parent
+          start if START == response and !Thread.current[:stop]
         end
       }
       Thread.pass until @thread[:stop] == false
+    end
+
+    def parent_loop
+      response = nil
+      loop {
+        break if Thread.current[:stop]
+        @piper.puts HEARTBEAT
+        response = @piper.gets(ERROR)
+        break if Thread.current[:stop]
+
+        case response
+        when HEARTBEAT; next
+        when START; break
+        when ERROR
+          raise Timeout,
+                "Child did not respond in a timely fashion. Timeout is set to #{@timeout.inspect} seconds."
+        when Exception
+          @error = response
+          break
+        else
+          raise UnknownResponse,
+                "Child returned unknown response: #{response.inspect}"
+        end
+      }
+      return response
     end
 
     # This code should only be executed in the child process. It wraps the
@@ -353,26 +354,39 @@ class Servolux::Prefork
     # signals and communication with the parent.
     #
     def child
-      @thread = Thread.current
+      @harvest = nil
 
       # if we get a HUP signal, then tell the parent process to stop this
       # child process and start a new one to replace it
       Signal.trap('HUP') {
         @piper.timeout = 0.5
         @piper.puts START rescue nil
-        @piper.gets rescue nil
-        @piper.close
-        self.hup if self.respond_to? :hup
+        hup if self.respond_to? :hup
       }
 
       Signal.trap('TERM') {
         @piper.close
-        self.term if self.respond_to? :term
+        term if self.respond_to? :term
       }
 
-      before_executing rescue nil if self.respond_to? :before_executing
-      :wait until @piper.gets == START
+      @thread = Thread.new {
+        begin
+          :wait until @piper.gets == START
+          before_executing rescue nil if self.respond_to? :before_executing
+          child_loop
+        rescue Exception => err
+          @piper.puts err rescue nil
+        ensure
+          after_executing rescue nil if self.respond_to? :after_executing
+          @piper.close
+        end
+      }
+      @thread.join
+    ensure
+      exit!
+    end
 
+    def child_loop
       loop {
         signal = @piper.gets(ERROR)
         case signal
@@ -383,18 +397,12 @@ class Servolux::Prefork
           break
         when ERROR
           raise Timeout,
-                "Parent did not respond in a timely fashion. Timeout is set to #{@prefork.timeout.inspect} seconds."
+                "Parent did not respond in a timely fashion. Timeout is set to #{@timeout.inspect} seconds."
         else
           raise UnknownSignal,
                 "Child received unknown signal: #{signal.inspect}"
         end
       }
-    rescue Exception => err
-      @piper.puts err rescue nil
-    ensure
-      after_executing rescue nil if self.respond_to? :after_executing
-      @piper.close
-      exit!
     end
   end
 end
