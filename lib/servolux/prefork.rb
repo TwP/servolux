@@ -32,7 +32,9 @@
 # Sending a SIGHUP to a child process will cause that child to stop and
 # restart. The child will send a signal to the parent asking to be shutdown.
 # The parent will gracefully halt the child and then start a new child process
-# to replace it.
+# to replace it. If you define a "hup" method in your worker module, it will
+# be executed when SIGHUP is received by the child. Your "hup" method will be
+# the last method executed in the signal handler.
 #
 # This has the advantage of calling your before/after_executing methods again
 # and reloading any code or resources your worker code will use. The SIGHUP
@@ -98,6 +100,30 @@
 #
 # Use the heartbeat with caution -- allow margins for timing issues and
 # processor load spikes.
+#
+# ==== Signals
+# Forked child processes are configured to respond to two signals: SIGHUP and
+# SIGTERM. The SIGHUP signal when sent to a child process is used to restart
+# just that one child. The SIGTERM signal when sent to a child process is used
+# to forcibly kill the child; it will not be restarted. The parent process
+# uses SIGTERM to halt all the children when it is stopping.
+#
+# SIGHUP
+# Child processes are restarted by sending a SIGHUP signal to the child. This
+# will shutdown the child worker and then start up a new one to replace it.
+# For the child to shutdown gracefully, it needs to return from the "execute"
+# method when it receives the signal. Define a "hup" method that will wake the
+# execute thread from any pending operations -- listening on a socket, reading
+# a file, polling a queue, etc. When the execute method returns, the child
+# will exit.
+#
+# SIGTERM
+# Child processes are stopped by the prefork parent by sending a SIGTERM
+# signal to the child. For the child to shutdown gracefully, it needs to
+# return from the "execute" method when it receives the signal. Define a
+# "term" method that will wake the execute thread from any pending operations
+# -- listening on a socket, reading a file, polling a queue, etc. When the
+# execute method returns, the child will exit.
 #
 class Servolux::Prefork
 
@@ -235,7 +261,7 @@ class Servolux::Prefork
     #
     def start
       @error = nil
-      sleep rand
+      sleepy_time
       @piper = ::Servolux::Piper.new('rw', :timeout => @timeout)
       @piper.parent? ? parent : child
       self
@@ -254,7 +280,7 @@ class Servolux::Prefork
       @thread[:stop] = true
       @thread.wakeup if @thread.status
       close_parent
-      sleep rand
+      sleepy_time
       signal 'TERM'
       @thread.join(0.5) rescue nil
       @thread = nil
@@ -299,6 +325,10 @@ class Servolux::Prefork
 
 
     private
+
+    def sleepy_time
+      sleep rand
+    end
 
     def close_parent
       @piper.timeout = 0.5
