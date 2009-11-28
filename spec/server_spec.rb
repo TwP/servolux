@@ -34,6 +34,9 @@ describe Servolux::Server do
   it 'generates a PID file with mode rw-r----- by default' do
     t = Thread.new {@server.startup}
     Thread.pass until @server.running? and t.status == 'sleep'
+
+    @log_output.readline.chomp.should == %q(DEBUG  Servolux : Server "Test Server" creating pid file "test_server.pid")
+    @log_output.readline.chomp.should == %q(DEBUG  Servolux : Starting)
     (File.stat(@server.pid_file).mode & 0777).should == 0640
   end
 
@@ -41,6 +44,9 @@ describe Servolux::Server do
     @server.pid_file_mode = 0400
     t = Thread.new {@server.startup}
     Thread.pass until @server.running? and t.status == 'sleep'
+
+    @log_output.readline.chomp.should == %q(DEBUG  Servolux : Server "Test Server" creating pid file "test_server.pid")
+    @log_output.readline.chomp.should == %q(DEBUG  Servolux : Starting)
     (File.stat(@server.pid_file).mode & 0777).should == 0400
   end
 
