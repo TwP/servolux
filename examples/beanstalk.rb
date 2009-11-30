@@ -22,25 +22,45 @@ require 'servolux'
 require 'beanstalk-client'
 
 module JobProcessor
-  # Open a connection to our beanstalk queue
+  # Open a connection to our beanstalk queue. This method is called once just
+  # before entering the child run loop.
   def before_executing
     @beanstalk = Beanstalk::Pool.new(['localhost:11300'])
   end
 
-  # Close the connection to our beanstalk queue
+  # Close the connection to our beanstalk queue. This method is called once
+  # just after the child run loop stops and just before the child exits.
   def after_executing
     @beanstalk.close
   end
 
+  # Close the beanstalk socket when we receive SIGHUP. This allows the execute
+  # thread to return processing back to the child run loop; the child run loop
+  # will gracefully shutdown the process.
+  def hup
+    @beanstalk.close if @job.nil?
+    @thread.wakeup
+  end
+
+  # We want to do the same thing when we receive SIGTERM.
+  alias :term :hup
+
   # Reserve a job from the beanstalk queue, and processes jobs as we receive
   # them. We have a timeout set for 2 minutes so that we can send a heartbeat
   # back to the parent process even if the beanstalk queue is empty.
+  #
+  # This method is called repeatedly by the child run loop until the child is
+  # killed via SIGHUP or SIGTERM or halted by the parent.
   def execute
-    job = @beanstalk.reserve(120) rescue nil
-    if job
-      # process job here ...
-      job.delete
+    @job = nil
+    @job = @beanstalk.reserve(120) rescue nil
+    if @job
+      $stdout.puts "[C] #{Process.pid} processing job #{@job.inspect}"
+      # ... do more processing here
     end
+  rescue Beanstalk::TimedOut
+  ensure
+    @job.delete rescue nil if @job
   end
 end
 
@@ -60,6 +80,11 @@ pool = Servolux::Prefork.new(:timeout => 600, :module => JobProcessor)
 # Start up 7 child processes to handle jobs
 pool.start 7
 
-# Stop when SIGINT is received.
-trap('INT') { pool.stop }
+# When SIGINT is received, kill all child process and then reap the child PIDs
+# from the proc table.
+trap('INT') {
+  pool.signal 'KILL'
+  pool.reap
+}
 Process.waitall
+

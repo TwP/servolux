@@ -182,7 +182,7 @@ class Servolux::Prefork
       @workers << Worker.new(self)
       @workers.last.extend @module
     }
-    @workers.each { |worker| worker.start }
+    @workers.each { |worker| worker.start; pause }
     self
   end
 
@@ -192,7 +192,7 @@ class Servolux::Prefork
   # +errors+ methods will still function correctly after stopping the workers.
   #
   def stop
-    @workers.each { |worker| worker.stop }
+    @workers.each { |worker| worker.stop; pause }
     reap
     self
   end
@@ -210,6 +210,20 @@ class Servolux::Prefork
     end
     self
   end
+
+  # Send this given _signal_ to all child process. The default signal is
+  # 'TERM'. The method waits for a short period of time after the signal is
+  # sent to each child; this is done to alleviate a flood of signals being
+  # sent simultaneously and overwhemlming the CPU.
+  #
+  # @param [String, Integer] signal The signal to send to child processes.
+  # @return [Prefork] self
+  #
+  def signal( signal = 'TERM' )
+    @workers.each { |worker| worker.signal(signal); pause }
+    self
+  end
+  alias :kill :signal
 
   # call-seq:
   #    each_worker { |worker| block }
@@ -231,6 +245,18 @@ class Servolux::Prefork
   def errors
     @workers.each { |worker| yield worker unless worker.error.nil? }
     self
+  end
+
+
+  private
+
+  # Pause script execution for a random time interval between 0.1 and 0.4
+  # seconds. This method is used to slow down the starting and stopping of
+  # child processes in order to avoiad the "thundering herd" problem.
+  # http://en.wikipedia.org/wiki/Thundering_herd_problem
+  #
+  def pause
+    sleep(0.1 + 0.3*rand)
   end
 
   # The worker encapsulates the forking of the child process and communication
@@ -261,7 +287,6 @@ class Servolux::Prefork
     #
     def start
       @error = nil
-      sleepy_time
       @piper = ::Servolux::Piper.new('rw', :timeout => @timeout)
       @piper.parent? ? parent : child
       self
@@ -280,7 +305,6 @@ class Servolux::Prefork
       @thread[:stop] = true
       @thread.wakeup if @thread.status
       close_parent
-      sleepy_time
       signal 'TERM'
       @thread.join(0.5) rescue nil
       @thread = nil
@@ -325,10 +349,6 @@ class Servolux::Prefork
 
 
     private
-
-    def sleepy_time
-      sleep rand
-    end
 
     def close_parent
       @piper.timeout = 0.5
