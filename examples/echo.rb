@@ -48,5 +48,5 @@ pool = Servolux::Prefork.new {
 pool.start 3
 
 # Stop the child processes when SIGINT is received.
-trap('INT') { pool.stop }
+trap('INT') { pool.signal 'KILL' }
 Process.waitall
