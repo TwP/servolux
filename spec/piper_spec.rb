@@ -60,7 +60,7 @@ describe Servolux::Piper do
       @piper.gets.should == 2
       @piper.gets.should == 3
 
-      @piper.timeout = 0
+      @piper.timeout = 0.1
       @piper.readable?.should be_false
     }
   end

@@ -232,7 +232,7 @@ class Servolux::Daemon
     @piper = ::Servolux::Piper.daemon(nochdir, noclose)
 
     @piper.parent {
-      @piper.timeout = 0
+      @piper.timeout = 0.1
       wait_for_startup
       exit!(0)
     }
@@ -409,6 +409,11 @@ class Servolux::Daemon
     attr_accessor :filename
     attr_reader   :look_for
 
+    def initialize
+      @filename = nil
+      @look_for = nil
+    end
+
     def look_for=( val )
       case val
       when nil;    @look_for = nil
@@ -421,9 +426,7 @@ class Servolux::Daemon
     end
 
     def stat
-      if @filename and test(?f, @filename)
-        File.stat @filename
-      end
+      File.stat(@filename) if @filename and test(?f, @filename)
     end
 
     def updated?
