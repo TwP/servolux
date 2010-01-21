@@ -93,6 +93,9 @@ class Servolux::Piper
   # The timeout in seconds to wait for puts / gets commands.
   attr_accessor :timeout
 
+  # The underlying socket the piper is using for communication.
+  attr_reader :socket
+
   # @overload Piper.new( mode = 'r', opts = {} )
   #   Creates a new Piper instance with the communication pipe configured
   #   using the provided _mode_. The default mode is read-only (from the

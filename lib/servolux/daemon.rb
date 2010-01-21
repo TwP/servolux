@@ -340,7 +340,7 @@ class Servolux::Daemon
   def exec( *args )
     logger.debug "Calling: exec(*#{args.inspect})"
     skip = [STDIN, STDOUT, STDERR]
-    skip << @piper.write_io if @piper
+    skip << @piper.socket if @piper
     ObjectSpace.each_object(IO) { |obj|
       next if skip.include? obj
       obj.close rescue nil

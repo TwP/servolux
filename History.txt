@@ -1,3 +1,9 @@
+== 0.9.1 / 2010-01-21
+
+* Bug Fixes
+  * Addressing daemon startup issues
+  * Calling a non-existent piper method from the daemon class
+
 == 0.9.0 / 2009-11-30
 
 * Minor Enhancements
