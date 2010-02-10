@@ -24,7 +24,6 @@ Bones {
   rubyforge.name 'codeforpeople'
 
   use_gmail
-  enable_sudo
 
   depend_on  'bones-extras', :development => true
   depend_on  'bones-git',    :development => true
