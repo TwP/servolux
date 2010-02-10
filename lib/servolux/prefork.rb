@@ -422,12 +422,12 @@ class Servolux::Prefork
       @thread = Thread.new {
         begin
           :wait until @piper.gets == START
-          before_executing rescue nil if self.respond_to? :before_executing
+          before_executing if self.respond_to? :before_executing
           child_loop
         rescue Exception => err
           @piper.puts err rescue nil
         ensure
-          after_executing rescue nil if self.respond_to? :after_executing
+          after_executing if self.respond_to? :after_executing
           @piper.close
         end
       }

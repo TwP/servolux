@@ -236,7 +236,7 @@ module Servolux::Threaded
       }
     ensure
       if threaded.respond_to?(:after_stopping) and !self.running
-        threaded.after_stopping rescue nil
+        threaded.after_stopping
       end
       self.running = false
     end  # @private
