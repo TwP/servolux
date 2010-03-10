@@ -2,7 +2,6 @@
 module Servolux
 
   # :stopdoc:
-  VERSION = '0.9.2'
   LIBPATH = ::File.expand_path(::File.dirname(__FILE__)) + ::File::SEPARATOR
   PATH = ::File.dirname(LIBPATH) + ::File::SEPARATOR
   # :startdoc:
@@ -15,7 +14,7 @@ module Servolux
   # @return [String]
   #
   def self.version
-    VERSION
+    @version ||= File.read(path('version.txt')).strip
   end
 
   # Returns the library path for the module. If any arguments are given,

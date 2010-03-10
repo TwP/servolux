@@ -1,3 +1,7 @@
+== 0.9.3 / 2010-03-10
+
+* Updated to the latest version of Mr Bones
+
 == 0.9.2 / 2010-02-10
 
 * Bug Fixes
