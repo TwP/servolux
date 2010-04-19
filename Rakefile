@@ -15,9 +15,7 @@ Bones {
   url          'http://gemcutter.org/gems/servolux'
   readme_file  'README.rdoc'
   ignore_file  '.gitignore'
-
   spec.opts << '--color'
-  rubyforge.name 'codeforpeople'
 
   use_gmail
 
