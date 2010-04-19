@@ -1,3 +1,5 @@
+require 'ostruct'
+
 # == Synopsis
 # The Daemon takes care of the work of creating and managing daemon
 # processes from Ruby.
@@ -224,17 +226,23 @@ class Servolux::Daemon
   #
   # @return [Daemon] self
   #
-  def startup
+  def startup(exit=true)
     raise Error, "Fork is not supported in this Ruby environment." unless ::Servolux.fork?
     return if alive?
 
     logger.debug "About to fork ..."
     @piper = ::Servolux::Piper.daemon(nochdir, noclose)
 
+    # Make sure we have an idea of the state of the log file BEFORE the child
+    # gets a chance to write to it.
+    if @logfile_reader
+      @logfile_reader.updated?
+    end
+
     @piper.parent {
       @piper.timeout = 0.1
       wait_for_startup
-      exit!(0)
+      exit!(0) if exit
     }
 
     @piper.child { run_startup_command }
@@ -426,7 +434,8 @@ class Servolux::Daemon
     end
 
     def stat
-      File.stat(@filename) if @filename and test(?f, @filename)
+      s = File.stat(@filename) if @filename and test(?f, @filename)
+      s || OpenStruct.new(:mtime => Time.mktime(1970,1,1), :size => 0)
     end
 
     def updated?
