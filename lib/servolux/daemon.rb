@@ -222,11 +222,12 @@ class Servolux::Daemon
     @logfile_reader.look_for = val
   end
 
-  # Start the daemon process.
+  # Start the daemon process. Passing in +false+ to this method will prevent
+  # the parent from exiting after the daemon process starts.
   #
   # @return [Daemon] self
   #
-  def startup(exit=true)
+  def startup( do_exit = true )
     raise Error, "Fork is not supported in this Ruby environment." unless ::Servolux.fork?
     return if alive?
 
@@ -235,14 +236,12 @@ class Servolux::Daemon
 
     # Make sure we have an idea of the state of the log file BEFORE the child
     # gets a chance to write to it.
-    if @logfile_reader
-      @logfile_reader.updated?
-    end
+    @logfile_reader.updated? if @logfile_reader
 
     @piper.parent {
       @piper.timeout = 0.1
       wait_for_startup
-      exit!(0) if exit
+      exit!(0) if do_exit
     }
 
     @piper.child { run_startup_command }
@@ -434,8 +433,8 @@ class Servolux::Daemon
     end
 
     def stat
-      s = File.stat(@filename) if @filename and test(?f, @filename)
-      s || OpenStruct.new(:mtime => Time.mktime(1970,1,1), :size => 0)
+      s = File.stat(@filename) if @filename && test(?f, @filename)
+      s || OpenStruct.new(:mtime => Time.at(0), :size => 0)
     end
 
     def updated?

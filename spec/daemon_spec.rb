@@ -25,7 +25,7 @@ describe Servolux::Daemon do
   end
 
   after(:each) do
-    @daemon.shutdown if defined? @daemon and @daemon
+    @daemon.shutdown if defined? @daemon && @daemon
     FileUtils.rm_f [log_fn, pid_fn]
   end
 
@@ -34,13 +34,8 @@ describe Servolux::Daemon do
     server.extend TestServer
     @daemon = Servolux::Daemon.new(:server => server, :log_file => log_fn, :timeout => 8)
 
-    piper = Servolux::Piper.new 'r'
-    piper.child { @daemon.startup }
-    piper.parent {
-      Process.wait piper.pid
-      $?.exitstatus.should == 0
-      @daemon.should be_alive
-    }
+    @daemon.startup false
+    @daemon.should be_alive
   end
 
   it 'waits for a particular line to appear in the log file' do
@@ -48,13 +43,8 @@ describe Servolux::Daemon do
     server.extend TestServer
     @daemon = Servolux::Daemon.new(:server => server, :log_file => log_fn, :look_for => 'executing run loop [2]', :timeout => 8)
 
-    piper = Servolux::Piper.new 'r'
-    piper.child { @daemon.startup }
-    piper.parent {
-      Process.wait piper.pid
-      $?.exitstatus.should == 0
-      @daemon.should be_alive
-    }
+    @daemon.startup false
+    @daemon.should be_alive
   end
 
   it 'raises an error if the startup timeout is exceeded' do

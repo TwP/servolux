@@ -1,3 +1,9 @@
+== 0.9.4 / 2010-04-18
+
+* Bug Fixes
+  * Elminated race condition in logfile watching [Avdi Grimm]
+  * Made program exit optionalx [Avdi Grimm]
+
 == 0.9.3 / 2010-03-10
 
 * Updated to the latest version of Mr Bones
