@@ -34,20 +34,30 @@ describe Servolux::Server do
   it 'generates a PID file with mode rw-r----- by default' do
     t = Thread.new {@server.startup}
     Thread.pass until @server.running? and t.status == 'sleep'
+    test(?e, @server.pid_file).should be_true
 
     @log_output.readline.chomp.should == %q(DEBUG  Servolux : Server "Test Server" creating pid file "test_server.pid")
     @log_output.readline.chomp.should == %q(DEBUG  Servolux : Starting)
     (File.stat(@server.pid_file).mode & 0777).should == 0640
+
+    @server.shutdown
+    Thread.pass until t.status == false
+    test(?e, @server.pid_file).should be_false
   end
 
   it 'generates PID file with the specified permissions' do
     @server.pid_file_mode = 0400
     t = Thread.new {@server.startup}
     Thread.pass until @server.running? and t.status == 'sleep'
+    test(?e, @server.pid_file).should be_true
 
     @log_output.readline.chomp.should == %q(DEBUG  Servolux : Server "Test Server" creating pid file "test_server.pid")
     @log_output.readline.chomp.should == %q(DEBUG  Servolux : Starting)
     (File.stat(@server.pid_file).mode & 0777).should == 0400
+
+    @server.shutdown
+    Thread.pass until t.status == false
+    test(?e, @server.pid_file).should be_false
   end
 
   it 'shuts down gracefully when signaled' do
