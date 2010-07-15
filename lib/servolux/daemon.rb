@@ -123,7 +123,7 @@ class Servolux::Daemon
   #   the standard input/output streams frees the file descriptors which are
   #   still being used by the parent process. This prevents zombie processes.
   #
-  # @option opts [String, Array<String>, Proc, Method, Servolux::Server] :shutdown_command (nil)
+  # @option opts [Numeric, String, Array<String>, Proc, Method, Servolux::Server] :shutdown_command (nil)
   #   Assign the startup command. Different calling semantics are used for
   #   each type of command.
   #
@@ -259,6 +259,7 @@ class Servolux::Daemon
 
     case shutdown_command
     when nil; kill
+    when Integer; kill(shutdown_command)
     when String; exec(shutdown_command)
     when Array; exec(*shutdown_command)
     when Proc, Method; shutdown_command.call

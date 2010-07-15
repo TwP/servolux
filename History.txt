@@ -1,3 +1,8 @@
+== 0.9.5 / 2010-07-15
+
+* Minor Enhancements
+  * Numeric value can be given as the "shutdown_command" for the Servolux::Daemon
+
 == 0.9.4 / 2010-04-18
 
 * Bug Fixes
