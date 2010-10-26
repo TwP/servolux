@@ -19,8 +19,7 @@ Bones {
 
   use_gmail
 
-  depend_on  'bones-extras', :development => true
+  depend_on  'bones-rspec',  :development => true
   depend_on  'bones-git',    :development => true
   depend_on  'logging',      :development => true
-  depend_on  'rspec',        :development => true
 }
