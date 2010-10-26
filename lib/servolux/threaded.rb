@@ -219,11 +219,11 @@ module Servolux::Threaded
     def run( threaded )
       loop {
         begin
-          sleep interval if running?
           break unless running?
           threaded.run
           self.iterations += 1
           break if finished_iterations?
+          sleep interval if running?
         rescue SystemExit; raise
         rescue Exception => err
           if continue_on_error
