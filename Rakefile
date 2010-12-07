@@ -5,7 +5,7 @@ rescue LoadError
   abort '### please install the "bones" gem ###'
 end
 
-task :default => 'spec:specdoc'
+task :default => 'spec:run'
 task 'gem:release' => 'spec:run'
 
 Bones {
