@@ -239,7 +239,7 @@ class Servolux::Prefork
   # call-seq:
   #    errors { |worker| block }
   #
-  # Iterates over all the works and yields the worker to the given _block_
+  # Iterates over all the workers and yields the worker to the given _block_
   # only if the worker has an error condition.
   #
   def errors
@@ -248,7 +248,7 @@ class Servolux::Prefork
   end
 
 
-  private
+private
 
   # Pause script execution for a random time interval between 0.1 and 0.4
   # seconds. This method is used to slow down the starting and stopping of
@@ -306,7 +306,7 @@ class Servolux::Prefork
       @thread.wakeup if @thread.status
       close_parent
       signal 'TERM'
-      @thread.join(0.5) rescue nil
+      @thread.join(0.5)
       @thread = nil
       self
     end
@@ -347,8 +347,19 @@ class Servolux::Prefork
       @piper.alive?
     end
 
+    # Returns +true+ if communication with the child process timed out.
+    # Returns +nil+ if the child process has not been started.
+    #
+    # Always returns +nil+ when called from the child process.
+    #
+    # @return [Boolean, nil]
+    #
+    def timeout?
+      return if @piper.nil? or @piper.child?
+      Timeout === @error
+    end
 
-    private
+  private
 
     def close_parent
       @piper.timeout = 0.5
@@ -364,7 +375,8 @@ class Servolux::Prefork
           @piper.puts START
           Thread.current[:stop] = false
           response = parent_loop
-        # TODO: put a logger here to catch and log all exceptions
+        rescue StandardError => err
+          @error = err
         ensure
           @harvest << @piper.pid
           close_parent
