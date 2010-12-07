@@ -365,6 +365,8 @@ class Servolux::Prefork
           Thread.current[:stop] = false
           response = parent_loop
         # TODO: put a logger here to catch and log all exceptions
+        rescue Exception => err
+          @error = err
         ensure
           @harvest << @piper.pid
           close_parent
