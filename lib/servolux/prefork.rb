@@ -354,7 +354,7 @@ private
     #
     # @return [Boolean, nil]
     #
-    def timeout?
+    def timed_out?
       return if @piper.nil? or @piper.child?
       Timeout === @error
     end
