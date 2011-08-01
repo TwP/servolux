@@ -218,4 +218,3 @@ class Servolux::Child
 
 end
 
-# EOF

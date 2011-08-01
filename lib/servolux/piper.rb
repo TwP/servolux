@@ -124,7 +124,7 @@ class Servolux::Piper
       raise ArgumentError, "Unsupported mode #{mode.inspect}"
     end
 
-    @timeout = opts.key?(:timeout) ? opts[:timeout] : nil
+    @timeout = opts.fetch(:timeout, nil)
     socket_pair = Socket.pair(Socket::AF_UNIX, Socket::SOCK_STREAM, 0)
     @child_pid = Kernel.fork
 
