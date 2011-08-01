@@ -4,15 +4,14 @@ SERVOLUX_SPEC_HELPER = true
 
 require 'rubygems'
 require 'logging'
-require 'spec'
+require 'rspec'
 require 'spec/logging_helper'
 
-require File.expand_path(
-    File.join(File.dirname(__FILE__), %w[.. lib servolux]))
+require File.expand_path('../../lib/servolux', __FILE__)
 
 include Logging.globally
 
-Spec::Runner.configure do |config|
+RSpec.configure do |config|
   include Spec::LoggingHelper
   config.capture_log_messages
 
@@ -27,4 +26,4 @@ Spec::Runner.configure do |config|
 end
 
 end  # unless defined?
-# EOF
+
