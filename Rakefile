@@ -14,7 +14,6 @@ Bones {
   email        'tim.pease@gmail.com'
   url          'http://gemcutter.org/gems/servolux'
   readme_file  'README.rdoc'
-  ignore_file  '.gitignore'
   spec.opts << '--color'
 
   use_gmail
