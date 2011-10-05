@@ -45,20 +45,20 @@ describe Servolux::Piper do
 
     @piper.parent {
       @piper.puts 'foo bar baz'
-      @piper.gets.should == 'foo bar baz'
+      @piper.gets.should be == 'foo bar baz'
 
       @piper.puts %w[one two three]
-      @piper.gets.should == %w[one two three]
+      @piper.gets.should be == %w[one two three]
 
-      @piper.puts('Returns # of bytes written').should > 0
-      @piper.gets.should == 'Returns # of bytes written'
+      @piper.puts('Returns # of bytes written').should be > 0
+      @piper.gets.should be == 'Returns # of bytes written'
 
       @piper.puts 1
       @piper.puts 2
       @piper.puts 3
-      @piper.gets.should == 1
-      @piper.gets.should == 2
-      @piper.gets.should == 3
+      @piper.gets.should be == 1
+      @piper.gets.should be == 2
+      @piper.gets.should be == 3
 
       @piper.timeout = 0.1
       @piper.readable?.should be_false
@@ -82,13 +82,13 @@ describe Servolux::Piper do
     }
 
     @piper.parent {
-      @piper.gets.should == :ready
+      @piper.gets.should be == :ready
 
       @piper.signal 'USR2'
-      @piper.gets.should == "'USR2' was received"
+      @piper.gets.should be == "'USR2' was received"
 
       @piper.signal 'INT'
-      @piper.gets.should == "'INT' was received"
+      @piper.gets.should be == "'INT' was received"
     }
   end
 

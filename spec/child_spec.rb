@@ -14,8 +14,8 @@ describe Servolux::Child do
   it 'has some sensible defaults' do
     @child.command.should be_nil
     @child.timeout.should be_nil
-    @child.signals.should == %w[TERM QUIT KILL]
-    @child.suspend.should == 4
+    @child.signals.should be == %w[TERM QUIT KILL]
+    @child.suspend.should be == 4
     @child.pid.should be_nil
     @child.io.should be_nil
   end
@@ -26,7 +26,7 @@ describe Servolux::Child do
 
     @child.pid.should_not be_nil
     @child.wait
-    @child.io.read.strip.should == Dir.pwd
+    @child.io.read.strip.should be == Dir.pwd
     @child.success?.should be_true
   end
 

@@ -36,9 +36,9 @@ describe Servolux::Server do
     Thread.pass until @server.running? and t.status == 'sleep'
     test(?e, @server.pid_file).should be_true
 
-    @log_output.readline.chomp.should == %q(DEBUG  Servolux : Server "Test Server" creating pid file "test_server.pid")
-    @log_output.readline.chomp.should == %q(DEBUG  Servolux : Starting)
-    (File.stat(@server.pid_file).mode & 0777).should == 0640
+    @log_output.readline.chomp.should be == %q(DEBUG  Servolux : Server "Test Server" creating pid file "test_server.pid")
+    @log_output.readline.chomp.should be == %q(DEBUG  Servolux : Starting)
+    (File.stat(@server.pid_file).mode & 0777).should be == 0640
 
     @server.shutdown
     Thread.pass until t.status == false
@@ -51,9 +51,9 @@ describe Servolux::Server do
     Thread.pass until @server.running? and t.status == 'sleep'
     test(?e, @server.pid_file).should be_true
 
-    @log_output.readline.chomp.should == %q(DEBUG  Servolux : Server "Test Server" creating pid file "test_server.pid")
-    @log_output.readline.chomp.should == %q(DEBUG  Servolux : Starting)
-    (File.stat(@server.pid_file).mode & 0777).should == 0400
+    @log_output.readline.chomp.should be == %q(DEBUG  Servolux : Server "Test Server" creating pid file "test_server.pid")
+    @log_output.readline.chomp.should be == %q(DEBUG  Servolux : Starting)
+    (File.stat(@server.pid_file).mode & 0777).should be == 0400
 
     @server.shutdown
     Thread.pass until t.status == false
@@ -82,13 +82,13 @@ describe Servolux::Server do
     @log_output.readline
 
     Process.kill('USR1', $$)
-    @log_output.readline.strip.should == 'INFO  Servolux : usr1 was called'
+    @log_output.readline.strip.should be == 'INFO  Servolux : usr1 was called'
 
     Process.kill('HUP', $$)
-    @log_output.readline.strip.should == 'INFO  Servolux : hup was called'
+    @log_output.readline.strip.should be == 'INFO  Servolux : hup was called'
 
     Process.kill('USR2', $$)
-    @log_output.readline.strip.should == 'INFO  Servolux : usr2 was called'
+    @log_output.readline.strip.should be == 'INFO  Servolux : usr2 was called'
 
     Process.kill('TERM', $$)
     Thread.pass until t.status == false
