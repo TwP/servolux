@@ -141,16 +141,6 @@ describe Servolux::Threaded do
     lambda { obj.join }.should raise_error(NotImplementedError, 'The run method must be defined by the threaded object.')
   end
 
-  it "can halt the run loop" do
-    klass = Class.new( base ) do
-      def run() throw :halt_run_loop; end
-    end
-
-    obj = klass.new
-    obj.start.join(2)
-    obj.running?.should be_false
-  end
-
   # --------------------------------------------------------------------------
   describe 'when setting maximum iterations' do
 
