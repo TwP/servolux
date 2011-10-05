@@ -78,11 +78,11 @@ describe Servolux::Threaded do
     obj.ary = []
 
     obj.start
-    obj.ary.should == [1,2]
+    obj.ary.should be == [1,2]
     obj.pass
 
     obj.stop.join(2)
-    obj.ary.should == [1,2,3,4]
+    obj.ary.should be == [1,2,3,4]
   end
 
   it "dies when an exception is thrown" do
@@ -97,7 +97,7 @@ describe Servolux::Threaded do
 
     obj.running?.should be_false
     @log_output.readline
-    @log_output.readline.chomp.should == "FATAL  Object : <RuntimeError> ni"
+    @log_output.readline.chomp.should be == "FATAL  Object : <RuntimeError> ni"
 
     lambda { obj.join }.should raise_error(RuntimeError, 'ni')
   end
@@ -124,7 +124,7 @@ describe Servolux::Threaded do
 
     obj.running?.should be_true
     @log_output.readline
-    @log_output.readline.chomp.should == "ERROR  Object : <RuntimeError> ni"
+    @log_output.readline.chomp.should be == "ERROR  Object : <RuntimeError> ni"
 
     obj.stop.join(2)
     obj.running?.should be_false
@@ -136,26 +136,73 @@ describe Servolux::Threaded do
     obj.pass nil
 
     @log_output.readline
-    @log_output.readline.chomp.should == "FATAL  Object : <NotImplementedError> The run method must be defined by the threaded object."
+    @log_output.readline.chomp.should be == "FATAL  Object : <NotImplementedError> The run method must be defined by the threaded object."
 
     lambda { obj.join }.should raise_error(NotImplementedError, 'The run method must be defined by the threaded object.')
   end
 
-  it "stops after a limited number of iterations" do
+  it "can halt the run loop" do
     klass = Class.new( base ) do
-      def run() ; end
+      def run() throw :halt_run_loop; end
     end
+
     obj = klass.new
-    obj.maximum_iterations = 5
-    obj.iterations.should == 0
-    obj.start
-    obj.wait
-    obj.iterations.should == 5
+    obj.start.join(2)
+    obj.running?.should be_false
   end
 
-  it "complains loudly if you attempt to set a maximum number of iterations < 1" do
-    obj = base.new
-    lambda { obj.maximum_iterations = -1 }.should raise_error( ArgumentError, "maximum iterations must be >= 1" )
+  # --------------------------------------------------------------------------
+  describe 'when setting maximum iterations' do
+
+    it "stops after a limited number of iterations" do
+      klass = Class.new( base ) do
+        def run() ; end
+      end
+
+      obj = klass.new
+      obj.maximum_iterations = 5
+      obj.iterations.should be == 0
+
+      obj.start
+      obj.wait
+      obj.iterations.should be == 5
+    end
+
+    it "runs the 'after_stopping' method" do
+      klass = Class.new( base ) do
+        attr_accessor :ary
+        def run() ; end
+        def after_stopping() ary << 4; end
+      end
+
+      obj = klass.new
+      obj.maximum_iterations = 5
+      obj.ary = []
+
+      obj.start
+      obj.wait
+      obj.ary.should be == [4]
+    end
+
+    it "should not increment iterations if maximum iterations has not been set" do
+      klass = Class.new( base ) do
+        def run() ; end
+      end
+
+      obj = klass.new
+      obj.iterations.should be == 0
+
+      obj.start
+      sleep 0.1
+      obj.stop.join(2)
+      obj.iterations.should be == 0
+    end
+
+    it "complains loudly if you attempt to set a maximum number of iterations < 1" do
+      obj = base.new
+      lambda { obj.maximum_iterations = -1 }.should raise_error( ArgumentError, "maximum iterations must be >= 1" )
+    end
+
   end
 end
 

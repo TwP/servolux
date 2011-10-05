@@ -217,20 +217,29 @@ module Servolux::Threaded
     end  # @private
 
     def run( threaded )
-      loop {
-        begin
-          break unless running?
-          threaded.run
-          self.iterations += 1
-          break if finished_iterations?
-          sleep interval if running?
-        rescue SystemExit; raise
-        rescue Exception => err
-          if continue_on_error
-            threaded.logger.error err
-          else
-            threaded.logger.fatal err
-            raise err
+      catch(:halt_run_loop) {
+        loop do
+          begin
+            break unless running?
+            threaded.run
+
+            if maximum_iterations
+              self.iterations += 1
+              if finished_iterations?
+                self.running = false
+                break
+              end
+            end
+
+            sleep interval if running?
+          rescue SystemExit; raise
+          rescue Exception => err
+            if continue_on_error
+              threaded.logger.error err
+            else
+              threaded.logger.fatal err
+              raise err
+            end
           end
         end
       }
