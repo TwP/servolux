@@ -5,14 +5,14 @@ SERVOLUX_SPEC_HELPER = true
 require 'rubygems'
 require 'logging'
 require 'rspec'
-require 'spec/logging_helper'
+require 'rspec/logging_helper'
 
 require File.expand_path('../../lib/servolux', __FILE__)
 
 include Logging.globally
 
 RSpec.configure do |config|
-  include Spec::LoggingHelper
+  include RSpec::LoggingHelper
   config.capture_log_messages
 
   # == Mock Framework
