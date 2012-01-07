@@ -69,8 +69,8 @@ class Servolux::Child
   def initialize( opts = {} )
     @command = opts[:command]
     @timeout = opts[:timeout]
-    @signals = opts[:signals] || %w[TERM QUIT KILL]
-    @suspend = opts[:suspend] || 4
+    @signals = opts.fetch(:signals, %w[TERM QUIT KILL])
+    @suspend = opts.fetch(:suspend, 4)
     @io = @pid = @status = @thread = @timed_out = nil
     yield self if block_given?
   end
