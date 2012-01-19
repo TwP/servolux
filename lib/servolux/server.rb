@@ -45,7 +45,7 @@ require 'thread'
 # just after the run loop thread has died; the +after_stopping+ method is
 # guarnteed to NOT be called till after the run loop thread is well and
 # truly dead.
-# 
+#
 # == Usage
 # For simple, quick and dirty servers just pass a block to the Server
 # initializer. This block will be used as the run method.
