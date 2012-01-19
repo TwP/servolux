@@ -213,7 +213,7 @@ module Servolux::Threaded
 
     def stop
       self.running = false
-      thread.wakeup
+      thread.wakeup if thread.alive?
     end  # @private
 
     def run( threaded )
