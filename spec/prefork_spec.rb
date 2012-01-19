@@ -100,6 +100,7 @@ describe Servolux::Prefork do
 
     @prefork.stop
     sleep 0.250 until Dir.glob(@glob).length == 0
+    workers.each { |w| w.wait rescue nil }
 
     rv = workers.all? { |w| !w.alive? }
     rv.should be == true
