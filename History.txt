@@ -1,3 +1,10 @@
+== 0.9.7 / 2012-01-19
+
+* Minor Enhancements
+  * Added `after_fork` and `before_exec` handlers for the Daemon class [issue #4]
+* Bug Fixes
+  * ThreadError when stopping threaded objects [issue #5]
+
 == 0.9.6 / 2011-01-02
 
 * Minor Enhancements
