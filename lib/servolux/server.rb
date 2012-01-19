@@ -153,10 +153,10 @@ class Servolux::Server
     @mutex = Mutex.new
     @shutdown = nil
 
-    self.logger        = opts[:logger]
-    self.pid_file      = opts[:pid_file]
-    self.pid_file_mode = opts[:pid_file_mode] || DEFAULT_PID_FILE_MODE
-    self.interval      = opts[:interval] || 0
+    self.logger        = opts.fetch(:logger, nil)
+    self.pid_file      = opts.fetch(:pid_file, nil)
+    self.pid_file_mode = opts.fetch(:pid_file_mode, DEFAULT_PID_FILE_MODE)
+    self.interval      = opts.fetch(:interval, 0)
 
     if block
       eg = class << self; self; end

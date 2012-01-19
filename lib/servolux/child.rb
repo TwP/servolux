@@ -67,8 +67,8 @@ class Servolux::Child
   #   signal before trying the next one in the list.
   #
   def initialize( opts = {} )
-    @command = opts[:command]
-    @timeout = opts[:timeout]
+    @command = opts.fetch(:command, nil)
+    @timeout = opts.fetch(:timeout, nil)
     @signals = opts.fetch(:signals, %w[TERM QUIT KILL])
     @suspend = opts.fetch(:suspend, 4)
     @io = @pid = @status = @thread = @timed_out = nil

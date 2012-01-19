@@ -160,8 +160,8 @@ class Servolux::Prefork
   # left to the user to implement this functionality.
   #
   def initialize( opts = {}, &block )
-    @timeout = opts[:timeout]
-    @module = opts[:module]
+    @timeout = opts.fetch(:timeout, nil)
+    @module = opts.fetch(:module, nil)
     @module = Module.new { define_method :execute, &block } if block
     @workers = []
     @harvest = Queue.new
