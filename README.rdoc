@@ -1,6 +1,8 @@
 = Serv-O-Lux
-* by Tim Pease
-* http://gemcutter.org/gems/servolux
+by Tim Pease {<img src="https://secure.travis-ci.org/TwP/servolux.png">}[http://travis-ci.org/TwP/servolux]
+
+* {Homepage}[http://rubygems.org/gems/servolux]
+* {Github Project}[http://github.com/TwP/servolux]
 
 === DESCRIPTION
 
