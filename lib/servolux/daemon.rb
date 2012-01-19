@@ -39,7 +39,7 @@ require 'ostruct'
 #
 # Again, the Daemon instance will wait till the daemon process shuts down.
 # This is determined by attempting to signal the daemon process PID and then
-# returning when this signal fails -- i.e. then the deamon process has died.
+# returning when this signal fails -- i.e. then the daemon process has died.
 #
 # == Examples
 #
@@ -75,7 +75,7 @@ class Servolux::Daemon
   Timeout = Class.new(Error)
   StartupError = Class.new(Error)
 
-  attr_reader   :name
+  attr_accessor :name
   attr_accessor :logger
   attr_accessor :pid_file
   attr_reader   :startup_command
@@ -85,8 +85,10 @@ class Servolux::Daemon
   attr_accessor :noclose
   attr_reader   :log_file
   attr_reader   :look_for
+  attr_accessor :after_fork
+  attr_accessor :before_exec
 
-  # Create a new Daemon that will manage the +startup_command+ as a deamon
+  # Create a new Daemon that will manage the +startup_command+ as a daemon
   # process.
   #
   # @option opts [String] :name
@@ -119,7 +121,7 @@ class Servolux::Daemon
   #
   # @option opts [Boolen] :noclose (false)
   #   When set to true this flag keeps the standard input/output streams from
-  #   being reopend to /dev/null when the deamon process is created. Reopening
+  #   being reopend to /dev/null when the daemon process is created. Reopening
   #   the standard input/output streams frees the file descriptors which are
   #   still being used by the parent process. This prevents zombie processes.
   #
@@ -138,23 +140,32 @@ class Servolux::Daemon
   #   is a useful check for determining if the daemon process is fully
   #   started.
   #
+  # @option opts [Proc, lambda] :after_fork (nil)
+  #   This proc will be called in the child process immediately after forking.
+  #
+  # @option opts [Proc, lambda] :before_exec (nil)
+  #   This proc will be called in the child process immediately before calling
+  #   `exec` to execute the desired process. This proc will be called after
+  #   the :after_fork proc if present.
+  #
   # @yield [self] Block used to configure the daemon instance
   #
   def initialize( opts = {} )
-    self.server = opts[:server] || opts[:startup_command]
-
-    @name     = opts[:name]     if opts.key?(:name)
-    @logger   = opts[:logger]   if opts.key?(:logger)
-    @pid_file = opts[:pid_file] if opts.key?(:pid_file)
-    @timeout  = opts[:timeout] || 30
-    @nochdir  = opts[:nochdir] || false
-    @noclose  = opts[:noclose] || false
-    @shutdown_command = opts[:shutdown_command]
-
     @piper = nil
     @logfile_reader = nil
-    self.log_file = opts[:log_file]
-    self.look_for = opts[:look_for]
+
+    self.name     = opts.fetch(:name, nil)
+    self.logger   = opts.fetch(:logger, nil)
+    self.pid_file = opts.fetch(:pid_file, nil)
+    self.startup_command  = opts.fetch(:server, nil) || opts.fetch(:startup_command, nil)
+    self.shutdown_command = opts.fetch(:shutdown_command, nil)
+    self.timeout  = opts.fetch(:timeout, 30)
+    self.nochdir  = opts.fetch(:nochdir, false)
+    self.noclose  = opts.fetch(:noclose, false)
+    self.log_file = opts.fetch(:log_file, nil)
+    self.look_for = opts.fetch(:look_for, nil)
+    self.after_fork  = opts.fetch(:after_fork, nil)
+    self.before_exec = opts.fetch(:before_exec, nil)
 
     yield self if block_given?
 
@@ -324,9 +335,11 @@ class Servolux::Daemon
   end
 
 
-  private
+private
 
   def run_startup_command
+    after_fork.call if after_fork.respond_to? :call
+
     case startup_command
     when String; exec(startup_command)
     when Array; exec(*startup_command)
@@ -347,12 +360,15 @@ class Servolux::Daemon
 
   def exec( *args )
     logger.debug "Calling: exec(*#{args.inspect})"
+
     skip = [STDIN, STDOUT, STDERR]
     skip << @piper.socket if @piper
     ObjectSpace.each_object(IO) { |obj|
       next if skip.include? obj
       obj.close rescue nil
     }
+
+    before_exec.call if before_exec.respond_to? :call
     Kernel.exec(*args)
   end
 
