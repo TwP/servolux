@@ -2,12 +2,12 @@
 #
 # In this example, we prefork 7 processes each of which connect to our
 # Beanstalkd queue and then wait for jobs to process. We are using a module so
-# that we can connect to the beanstalk queue before exectuing and then
+# that we can connect to the beanstalk queue before executing and then
 # disconnect from the beanstalk queue after exiting. These methods are called
 # exactly once per child process.
 #
 # A variation on this is to load source code in the before_executing method
-# and initialize an object that will process jobs. This is advantagous because
+# and initialize an object that will process jobs. This is advantageous because
 # now you can send SIGHUP to a child process and it will restart, loading your
 # Ruby libraries before executing. Now you can do a rolling deploy of new
 # code.

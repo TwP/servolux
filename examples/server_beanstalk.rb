@@ -25,7 +25,7 @@ server.startup
 # pool to be gracefully stopped and to be monitored by the server thread. This
 # monitoring involves reaping child processes that have died and reporting on
 # errors raised by children. It is also possible to respawn dead child
-# workers, but this should be thuroughly thought through (ha, unintentional
+# workers, but this should be thoroughly thought through (ha, unintentional
 # alliteration) before doing so [if the CPU is thrashing, then respawning dead
 # child workers will only contribute to the thrash].
 module BeanstalkWorkerPool
@@ -38,7 +38,7 @@ module BeanstalkWorkerPool
 
   # This run loop will be called at a fixed interval by the server thread. If
   # the pool has any child processes that have died or restarted, then the
-  # expired PIDs are reaed from the proc table. If any workers in the pool
+  # expired PIDs are read from the proc table. If any workers in the pool
   # have reported an error, then display those errors on STDOUT; these are
   # errors raised from the child process that caused the child to terminate.
   def run

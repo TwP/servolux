@@ -214,7 +214,7 @@ class Servolux::Prefork
   # Send this given _signal_ to all child process. The default signal is
   # 'TERM'. The method waits for a short period of time after the signal is
   # sent to each child; this is done to alleviate a flood of signals being
-  # sent simultaneously and overwhemlming the CPU.
+  # sent simultaneously and overwhelming the CPU.
   #
   # @param [String, Integer] signal The signal to send to child processes.
   # @return [Prefork] self
@@ -252,7 +252,7 @@ private
 
   # Pause script execution for a random time interval between 0.1 and 0.4
   # seconds. This method is used to slow down the starting and stopping of
-  # child processes in order to avoiad the "thundering herd" problem.
+  # child processes in order to avoid the "thundering herd" problem.
   # http://en.wikipedia.org/wiki/Thundering_herd_problem
   #
   def pause

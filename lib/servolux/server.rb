@@ -16,7 +16,7 @@ require 'thread'
 # SIGINT and SIGTERM are handled by default. These signals will gracefully
 # shutdown the server by calling the +shutdown+ method (provided by default,
 # too). A few other signals can be handled by defining a few methods on your
-# server instance. For example, SIGINT is hanlded by the +int+ method (an
+# server instance. For example, SIGINT is handled by the +int+ method (an
 # alias for +shutdown+). Likewise, SIGTERM is handled by the +term+ method
 # (another alias for +shutdown+). The following signal methods are
 # recognized by the Server class:
@@ -43,7 +43,7 @@ require 'thread'
 # shutdown: +before_stopping+ and +after_stopping+. The first is called just
 # before the run loop thread is signaled for shutdown. The second is called
 # just after the run loop thread has died; the +after_stopping+ method is
-# guarnteed to NOT be called till after the run loop thread is well and
+# guaranteed to NOT be called till after the run loop thread is well and
 # truly dead.
 #
 # == Usage

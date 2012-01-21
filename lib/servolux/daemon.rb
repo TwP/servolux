@@ -112,16 +112,16 @@ class Servolux::Daemon
   #   The time (in seconds) to wait for the daemon process to either startup
   #   or shutdown. An error is raised when this timeout is exceeded.
   #
-  # @option opts [Boolen] :nochdir (false)
+  # @option opts [Boolean] :nochdir (false)
   #   When set to true this flag directs the daemon process to keep the
   #   current working directory. By default, the process of daemonizing will
   #   cause the current working directory to be changed to the root folder
   #   (thus preventing the daemon process from holding onto the directory
   #   inode).
   #
-  # @option opts [Boolen] :noclose (false)
+  # @option opts [Boolean] :noclose (false)
   #   When set to true this flag keeps the standard input/output streams from
-  #   being reopend to /dev/null when the daemon process is created. Reopening
+  #   being reopened to /dev/null when the daemon process is created. Reopening
   #   the standard input/output streams frees the file descriptors which are
   #   still being used by the parent process. This prevents zombie processes.
   #
@@ -131,7 +131,7 @@ class Servolux::Daemon
   #
   # @option opts [String] :log_file (nil)
   #   This log file will be monitored to determine if the daemon process has
-  #   sucessfully started.
+  #   successfully started.
   #
   # @option opts [String, Regexp] :look_for (nil)
   #   This can be either a String or a Regexp. It defines a phrase to search
@@ -186,7 +186,7 @@ class Servolux::Daemon
   #
   # If the startup command is a Proc or a bound Method then it is invoked
   # using the +call+ method on the object. No arguments are passed to the
-  # +call+ invocoation.
+  # +call+ invocation.
   #
   # Lastly, if the startup command is a Servolux::Server then its +startup+
   # method is called.
