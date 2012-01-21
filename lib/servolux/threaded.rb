@@ -1,6 +1,6 @@
 
 # == Synopsis
-# The Threaded module is used to peform some activity at a specified
+# The Threaded module is used to perform some activity at a specified
 # interval.
 #
 # == Details
@@ -14,7 +14,7 @@
 # Just before the thread is created the +before_starting+ method will be
 # called (if it is defined by the threaded object). Likewise, after the
 # thread is created the +after_starting+ method will be called (if it is
-# defeined by the threaded object).
+# defined by the threaded object).
 #
 # The threaded object is stopped by calling the +stop+ method. This sets an
 # internal flag and then wakes up the thread. The thread gracefully exits
@@ -22,7 +22,7 @@
 # are defined for stopping as well. Just before the thread is stopped the
 # +before_stopping+ method will be called (if it is defined by the threaded
 # object). Likewise, after the thread has died the +after_stopping+ method
-# will be called (if it is defeined by the threaded object).
+# will be called (if it is defined by the threaded object).
 #
 # Calling the +join+ method on a threaded object will cause the calling
 # thread to wait until the threaded object has stopped. An optional timeout
@@ -35,7 +35,7 @@
 module Servolux::Threaded
 
   # This method will be called by the activity thread at the desired
-  # interval. Implementing classes are exptect to provide this
+  # interval. Implementing classes are expect to provide this
   # functionality.
   #
   def run
@@ -189,7 +189,7 @@ module Servolux::Threaded
     _activity_thread.continue_on_error = (value ? true : false)
   end
 
-  # Returns +true+ if the threded object should continue running even if an
+  # Returns +true+ if the threaded object should continue running even if an
   # error is raised by the run method. The default is to return +false+. The
   # threaded object will stop running when an error is raised.
   #

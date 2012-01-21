@@ -18,7 +18,7 @@ module Servolux
   end
 
   # Returns the library path for the module. If any arguments are given,
-  # they will be joined to the end of the libray path using
+  # they will be joined to the end of the library path using
   # <tt>File.join</tt>.
   #
   # @return [String] absolute servolux 'lib' path

@@ -2,13 +2,13 @@
 require 'socket'
 
 # == Synopsis
-# A Piper is used to fork a child proces and then establish a communication
+# A Piper is used to fork a child process and then establish a communication
 # pipe between the parent and child. This communication pipe is used to pass
 # Ruby objects between the two.
 #
 # == Details
 # When a new piper instance is created, the Ruby process is forked into two
-# porcesses - the parent and the child. Each continues execution from the
+# processes - the parent and the child. Each continues execution from the
 # point of the fork. The piper establishes a pipe for communication between
 # the parent and the child. This communication pipe can be opened as read /
 # write / read-write (from the perspective of the parent).
@@ -207,7 +207,7 @@ class Servolux::Piper
     end
   end
 
-  # Returns +true+ if this is the child prcoess and +false+ otherwise.
+  # Returns +true+ if this is the child process and +false+ otherwise.
   #
   # @return [Boolean]
   #
@@ -235,7 +235,7 @@ class Servolux::Piper
     end
   end
 
-  # Returns +true+ if this is the parent prcoess and +false+ otherwise.
+  # Returns +true+ if this is the parent process and +false+ otherwise.
   #
   # @return [Boolean]
   #
