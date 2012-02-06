@@ -359,6 +359,16 @@ private
       Timeout === @error
     end
 
+    %w[pid coredump? exited? signaled? stopped? success? exitstatus stopsig termsig].
+    each { |method|
+      self.class_eval <<-CODE
+        def #{method}
+          return if @piper.nil?
+          @piper.#{method}
+        end
+      CODE
+    }
+
   private
 
     def close_parent
