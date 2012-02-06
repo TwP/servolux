@@ -130,6 +130,18 @@ class Servolux::Child
   # global variable $? is set to a Process::Status object containing
   # information on the child process.
   #
+  # You can get more information about how the child status exited by calling
+  # the following methods on the piper instance:
+  #
+  #   * coredump?
+  #   * exited?
+  #   * signaled?
+  #   * stopped?
+  #   * success?
+  #   * exitstatus
+  #   * stopsig
+  #   * termsig
+  #
   # @param [Integer] flags Bit flags that will be passed to the system level
   #   wait call. See the Ruby core documentation for Process#wait for more
   #   information on these flags.
@@ -138,8 +150,7 @@ class Servolux::Child
   #
   def wait( flags = 0 )
     return if @io.nil?
-    Process.wait(@pid, flags)
-    @status = $?
+    _, @status = Process.wait2(@pid, flags) unless @status
     exitstatus
   end
 
@@ -150,6 +161,7 @@ class Servolux::Child
   #
   def alive?
     return if @io.nil?
+    wait(Process::WNOHANG|Process::WUNTRACED)
     Process.kill(0, @pid)
     true
   rescue Errno::ESRCH, Errno::ENOENT
