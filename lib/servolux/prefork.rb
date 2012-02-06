@@ -228,7 +228,7 @@ class Servolux::Prefork
   # call-seq:
   #    each_worker { |worker| block }
   #
-  # Iterates over all the works and yields each, in turn, to the given
+  # Iterates over all the workers and yields each, in turn, to the given
   # _block_.
   #
   def each_worker( &block )
@@ -317,7 +317,7 @@ private
     #
     def wait
       return if @piper.nil? or @piper.child?
-      Process.wait(@piper.pid, Process::WNOHANG|Process::WUNTRACED)
+      @piper.wait(Process::WNOHANG|Process::WUNTRACED)
     end
 
     # Send this given _signal_ to the child process. The default signal is
