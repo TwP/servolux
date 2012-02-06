@@ -341,10 +341,7 @@ class Servolux::Piper
   #
   def wait( flags = 0 )
     return if child?
-    unless @status
-      Process.wait(@child_pid, flags)
-      @status = $?
-    end
+    _, @status = Process.wait2(@child_pid, flags) unless @status
     exitstatus
   rescue Errno::ECHILD
     nil
