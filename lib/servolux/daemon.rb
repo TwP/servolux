@@ -392,7 +392,7 @@ private
     started = wait_for {
       rv = started?
       err = @piper.gets
-      raise StartupError, "Child raised error: #{err.inspect}" unless err.nil?
+      raise StartupError, "Child raised error: #{err.inspect}", err.backtrace unless err.nil?
       rv
     }
 
