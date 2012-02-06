@@ -124,6 +124,7 @@ class Servolux::Piper
       raise ArgumentError, "Unsupported mode #{mode.inspect}"
     end
 
+    @status = nil
     @timeout = opts.fetch(:timeout, nil)
     socket_pair = Socket.pair(Socket::AF_UNIX, Socket::SOCK_STREAM, 0)
     @child_pid = Kernel.fork
@@ -309,9 +310,44 @@ class Servolux::Piper
   #   the child process.
   #
   def signal( sig )
-    return if @child_pid.nil?
+    return if child?
     sig = Signal.list.invert[sig] if sig.is_a?(Integer)
     Process.kill(sig, @child_pid)
+  end
+
+  # Waits for the child process to exit and returns its exit status. The
+  # global variable $? is set to a Process::Status object containing
+  # information on the child process.
+  #
+  # Always returns +nil+ when called from the child process.
+  #
+  # You can get more information about how the child status exited by calling
+  # the following methods on the piper instance:
+  #
+  #   * coredump?
+  #   * exited?
+  #   * signaled?
+  #   * stopped?
+  #   * success?
+  #   * exitstatus
+  #   * stopsig
+  #   * termsig
+  #
+  # @param [Integer] flags Bit flags that will be passed to the system level
+  #   wait call. See the Ruby core documentation for Process#wait for more
+  #   information on these flags.
+  # @return [Integer, nil] The exit status of the child process or +nil+ if
+  #   the child process is not running.
+  #
+  def wait( flags = 0 )
+    return if child?
+    unless @status
+      Process.wait(@child_pid, flags)
+      @status = $?
+    end
+    exitstatus
+  rescue Errno::ECHILD
+    nil
   end
 
   # Returns +true+ if the child process is alive. Returns +nil+ if the child
@@ -322,12 +358,22 @@ class Servolux::Piper
   # @return [Boolean, nil]
   #
   def alive?
-    return if @child_pid.nil?
+    return if child?
+    wait(Process::WNOHANG|Process::WUNTRACED)
     Process.kill(0, @child_pid)
     true
   rescue Errno::ESRCH, Errno::ENOENT
     false
   end
 
+  %w[coredump? exited? signaled? stopped? success? exitstatus stopsig termsig].
+  each { |method|
+    self.class_eval <<-CODE
+      def #{method}
+        return if @status.nil?
+        @status.#{method}
+      end
+    CODE
+  }
 end
 
