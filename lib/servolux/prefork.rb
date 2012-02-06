@@ -400,6 +400,7 @@ private
       response = nil
       loop {
         break if Thread.current[:stop]
+        break unless @piper.alive?
         @piper.puts HEARTBEAT
         response = @piper.gets(ERROR)
         break if Thread.current[:stop]
