@@ -123,6 +123,24 @@ describe Servolux::Prefork do
     pid.should_not == pids.last
   end
 
+  it "starts up a stopped worker" do
+    @prefork = Servolux::Prefork.new :module => @worker
+    @prefork.start 2
+    ary = workers
+    sleep 0.250 until ary.all? { |w| w.alive? }
+    sleep 0.250 until worker_count >= 2
+
+    pid = pids.last
+    ary.last.signal 'TERM'
+
+    @prefork.reap until !alive? pid
+    @prefork.each_worker do |worker|
+      worker.start unless worker.alive?
+    end
+    sleep 0.250 until ary.all? { |w| w.alive? }
+    pid.should_not == pids.last
+  end
+
 end
 end  # Servolux.fork?
 
