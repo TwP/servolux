@@ -141,6 +141,30 @@ describe Servolux::Prefork do
     pid.should_not == pids.last
   end
 
+  it "adds a new worker to the worker pool" do
+    @prefork = Servolux::Prefork.new :module => @worker
+    @prefork.start 2
+    ary = workers
+    sleep 0.250 until ary.all? { |w| w.alive? }
+    sleep 0.250 until worker_count >= 2
+
+
+    @prefork.add_workers( 2 )
+    sleep 0.250 until worker_count >= 4
+    workers.size.should == 4
+  end
+
+  it "only adds workers up to the max_workers value" do
+    @prefork = Servolux::Prefork.new :module => @worker, :max_workers => 3
+    @prefork.start 2
+    ary = workers
+    sleep 0.250 until ary.all? { |w| w.alive? }
+    sleep 0.250 until worker_count >= 2
+
+    @prefork.add_workers( 2 )
+    sleep 0.250 until worker_count >= 3
+    workers.size.should == 3
+  end
 end
 end  # Servolux.fork?
 

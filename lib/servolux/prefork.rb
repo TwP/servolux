@@ -162,6 +162,7 @@ class Servolux::Prefork
   def initialize( opts = {}, &block )
     @timeout = opts.fetch(:timeout, nil)
     @module = opts.fetch(:module, nil)
+    @max_workers = opts.fetch(:max_workers, nil)
     @module = Module.new { define_method :execute, &block } if block
     @workers = []
     @harvest = Queue.new
@@ -177,13 +178,8 @@ class Servolux::Prefork
   #
   def start( number )
     @workers.clear
-
-    number.times {
-      @workers << Worker.new(self)
-      @workers.last.extend @module
-    }
-    @workers.each { |worker| worker.start; pause }
-    self
+    add_workers( number )
+   self
   end
 
   # Stop all workers. The current process will wait for each child process to
@@ -234,6 +230,34 @@ class Servolux::Prefork
   def each_worker( &block )
     @workers.each(&block)
     self
+  end
+
+  # call-seq:
+  #    add_workers( number = 1 )
+  #
+  # Adds additional workers to the pool. It will not add more workers than
+  # The number set in :max_workers
+  #
+  def add_workers( number = 1 )
+    number.times do
+      break if at_max_workers?
+      worker = Worker.new( self )
+      worker.extend @module
+      worker.start
+      @workers << worker
+      pause
+    end
+  end
+
+  # call-seq:
+  #    at_max_workers?
+  #
+  # Return true or false if we are currently at or above the maximum number of
+  # workers allowed.
+  #
+  def at_max_workers?
+    return false unless @max_workers
+    return @workers.size >= @max_workers
   end
 
   # call-seq:
