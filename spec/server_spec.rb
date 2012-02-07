@@ -63,11 +63,11 @@ describe Servolux::Server do
   it 'shuts down gracefully when signaled' do
     t = Thread.new {@server.startup}
     Thread.pass until @server.running? and t.status == 'sleep'
-    @server.running?.should be_true
+    @server.should be_running
 
-    Process.kill('INT', $$)
+    Process.kill('TERM', $$)
     Thread.pass until t.status == false
-    @server.running?.should be_false
+    @server.should_not be_running
   end
 
   it 'responds to signals that have defined handlers' do
@@ -92,7 +92,7 @@ describe Servolux::Server do
 
     Process.kill('TERM', $$)
     Thread.pass until t.status == false
-    @server.running?.should be_false
+    @server.should_not be_running
   end
 end
 
