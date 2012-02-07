@@ -69,8 +69,11 @@ STDERR.puts "server test #{__LINE__}"
 STDERR.puts "server test #{__LINE__}"
 
     Process.kill('TERM', $$)
+
 STDERR.puts "server test #{__LINE__}"
-    Thread.pass until t.status == false
+    start = Time.now
+STDERR.puts "server test #{__LINE__}"
+    Thread.pass until t.status == false or (Time.now - start) > 5
 STDERR.puts "server test #{__LINE__}"
     @server.should_not be_running
 STDERR.puts "server test #{__LINE__}"
@@ -97,7 +100,8 @@ STDERR.puts "server test #{__LINE__}"
     @log_output.readline.strip.should be == 'INFO  Servolux : usr2 was called'
 
     Process.kill('TERM', $$)
-    Thread.pass until t.status == false
+    start = Time.now
+    Thread.pass until t.status == false or (Time.now - start) > 5
     @server.should_not be_running
   end
 end
