@@ -172,7 +172,6 @@ class Servolux::Prefork
     @min_workers = opts.fetch(:min_workers, nil)
     @module = Module.new { define_method :execute, &block } if block
     @workers = []
-    @harvest = Queue.new
 
     raise ArgumentError, 'No code was given to execute by the workers.' unless @module
   end
@@ -207,9 +206,8 @@ class Servolux::Prefork
   # @return [Prefork] self
   #
   def reap
-    while !@harvest.empty?
-      pid = @harvest.pop
-      Process.wait pid rescue nil
+    each_worker do |w|
+      w.alive?
     end
     self
   end
@@ -341,7 +339,6 @@ private
     #
     def initialize( prefork )
       @timeout = prefork.timeout
-      @harvest = prefork.harvest
       @thread = nil
       @piper = nil
       @error = nil
@@ -455,7 +452,6 @@ private
         rescue StandardError => err
           @error = err
         ensure
-          @harvest << @piper.pid
           close_parent
           start if START == response and !Thread.current[:stop]
         end
@@ -494,7 +490,6 @@ private
     # signals and communication with the parent.
     #
     def child
-      @harvest = nil
 
       # if we get a HUP signal, then tell the parent process to stop this
       # child process and start a new one to replace it
