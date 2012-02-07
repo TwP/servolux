@@ -68,7 +68,13 @@ STDERR.puts "server test #{__LINE__}"
     @server.should be_running
 STDERR.puts "server test #{__LINE__}"
 
-    Process.kill('INT', $$)
+    if ENV['TRAVIS']
+STDERR.puts "server test #{__LINE__}"
+      @server.int
+    else
+STDERR.puts "server test #{__LINE__}"
+      Process.kill('INT', $$)
+    end
 
 STDERR.puts "server test #{__LINE__}"
     start = Time.now
