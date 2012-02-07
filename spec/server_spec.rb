@@ -68,12 +68,10 @@ STDERR.puts "server test #{__LINE__}"
     @server.should be_running
 STDERR.puts "server test #{__LINE__}"
 
-    Process.kill('TERM', $$)
+    Process.kill('INT', $$)
 
 STDERR.puts "server test #{__LINE__}"
-    start = Time.now
-STDERR.puts "server test #{__LINE__}"
-    Thread.pass until t.status == false or (Time.now - start) > 5
+    sleep 0.1 until t.status == false
 STDERR.puts "server test #{__LINE__}"
     @server.should_not be_running
 STDERR.puts "server test #{__LINE__}"
@@ -101,7 +99,7 @@ STDERR.puts "server test #{__LINE__}"
 
     Process.kill('TERM', $$)
     start = Time.now
-    Thread.pass until t.status == false or (Time.now - start) > 5
+    sleep 0.1 until t.status == false or (Time.now - start) > 5
     @server.should_not be_running
   end
 end
