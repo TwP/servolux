@@ -71,9 +71,7 @@ describe Servolux::Server do
     wait_until { @server.running? and t.status == 'sleep' }
     @server.should be_running
 
-    # the Travis-CI environment swallows INT and TERM signals for some reason
-    ENV['TRAVIS'] ? @server.int : Process.kill('INT', $$)
-
+    `kill -SIGINT #{$$}`
     wait_until { t.status == false }
     @server.should_not be_running
   end
@@ -90,19 +88,16 @@ describe Servolux::Server do
     @log_output.readline
     @log_output.readline.strip.should be == 'DEBUG  Servolux : Starting'
 
-    #Process.kill('USR1', $$); sleep 5
-    `kill -SIGUSR1 #{$$}`; sleep 5
+    `kill -SIGUSR1 #{$$}`; sleep 0.1
     @log_output.readline.strip.should be == 'INFO  Servolux : usr1 was called'
 
-    Process.kill('HUP', $$)
+    `kill -SIGHUP #{$$}`; sleep 0.1
     @log_output.readline.strip.should be == 'INFO  Servolux : hup was called'
 
-    Process.kill('USR2', $$)
+    `kill -SIGUSR2 #{$$}`; sleep 0.1
     @log_output.readline.strip.should be == 'INFO  Servolux : usr2 was called'
 
-    # the Travis-CI environment swallows INT and TERM signals for some reason
-    ENV['TRAVIS'] ? @server.term : Process.kill('TERM', $$)
-
+    `kill -SIGTERM #{$$}`
     wait_until { t.status == false }
     @server.should_not be_running
   end
