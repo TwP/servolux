@@ -165,6 +165,36 @@ describe Servolux::Prefork do
     sleep 0.250 until worker_count >= 3
     workers.size.should == 3
   end
+
+  it "prunes workers that are no longer running" do
+    @prefork = Servolux::Prefork.new :module => @worker
+    @prefork.start 2
+    ary = workers
+    sleep 0.250 until ary.all? { |w| w.alive? }
+    sleep 0.250 until worker_count >= 2
+
+    @prefork.add_workers( 2 )
+    sleep 0.250 until worker_count >= 3
+    workers.size.should be == 4
+
+    workers[0].stop
+    sleep 0.250 while workers[0].alive?
+
+    @prefork.prune_workers
+    workers.size.should be == 3
+  end
+
+  it "ensures that there are minimum number of workers" do
+    @prefork = Servolux::Prefork.new :module => @worker, :min_workers => 3
+    @prefork.start 1
+    ary = workers
+    sleep 0.250 until ary.all? { |w| w.alive? }
+    sleep 0.250 until worker_count >= 1
+
+    @prefork.ensure_worker_pool_size
+    sleep 0.250 until worker_count >= 3
+    workers.size.should be == 3
+  end
 end
 end  # Servolux.fork?
 

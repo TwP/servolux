@@ -156,6 +156,12 @@ class Servolux::Prefork
   # If you do not want to use the heartbeat then leave the :timeout unset or
   # manually set it to +nil+.
   #
+  # Additionally, :min_workers and :max_workers options are avilable. If
+  # :min_workers is given, the method +ensure_worker_pool_size+ will guarantee
+  # that at least :min_workers are up and running. If :max_workers is given,
+  # then +add_workers+ will NOT allow ou to spawn more workers than
+  # :max_workers.
+  #
   # The pre-forking worker pool makes no effort to restart dead workers. It is
   # left to the user to implement this functionality.
   #
@@ -163,6 +169,7 @@ class Servolux::Prefork
     @timeout = opts.fetch(:timeout, nil)
     @module = opts.fetch(:module, nil)
     @max_workers = opts.fetch(:max_workers, nil)
+    @min_workers = opts.fetch(:min_workers, nil)
     @module = Module.new { define_method :execute, &block } if block
     @workers = []
     @harvest = Queue.new
@@ -247,6 +254,42 @@ class Servolux::Prefork
       @workers << worker
       pause
     end
+  end
+
+  # call-seq:
+  #    prune_workers()
+  #
+  # Remove workers that are no longer alive from the worker pool
+  #
+  def prune_workers
+    new_workers = @workers.find_all { |w| w.alive? }
+    @workers = new_workers
+  end
+
+  # call-seq:
+  #   ensure_worker_pool_size()
+  #
+  # Make sure that the worker pool as >= the minimum number of workers and less
+  # than the maximum number of workers.
+  #
+  # Generally, this means prune the number of workers and then spawn workers up
+  # to the min_worker level. If min is not set, then we only prune
+  #
+  def ensure_worker_pool_size
+    prune_workers
+    while below_minimum_workers? do
+      add_workers
+    end
+  end
+
+  # call-seq:
+  #   below_minimum_workers?
+  #
+  # Report if the number of workers is below the minimum threshold
+  #
+  def below_minimum_workers?
+    return false unless @min_workers
+    return @workers.size < @min_workers
   end
 
   # call-seq:
