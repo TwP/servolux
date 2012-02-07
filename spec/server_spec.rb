@@ -71,7 +71,9 @@ STDERR.puts "server test #{__LINE__}"
     Process.kill('INT', $$)
 
 STDERR.puts "server test #{__LINE__}"
-    sleep 0.1 until t.status == false
+    start = Time.now
+STDERR.puts "server test #{__LINE__}"
+    sleep 0.1 until t.status == false or (Time.now - start) > 5
 STDERR.puts "server test #{__LINE__}"
     @server.should_not be_running
 STDERR.puts "server test #{__LINE__}"
