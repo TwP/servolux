@@ -127,7 +127,7 @@
 #
 class Servolux::Prefork
 
-  Timeout = Class.new(::Servolux::Error)
+  CommunicationError = Class.new(::Servolux::Error)
   UnknownSignal = Class.new(::Servolux::Error)
   UnknownResponse = Class.new(::Servolux::Error)
 
@@ -356,7 +356,7 @@ private
     #
     def timed_out?
       return if @piper.nil? or @piper.child?
-      Timeout === @error
+      CommunicationError === @error
     end
 
     %w[pid coredump? exited? signaled? stopped? success? exitstatus stopsig termsig].
@@ -409,8 +409,8 @@ private
         when HEARTBEAT; next
         when START; break
         when ERROR
-          raise Timeout,
-                "Child did not respond in a timely fashion. Timeout is set to #{@timeout.inspect} seconds."
+          raise CommunicationError,
+                "Unable to read data from Child process. Possible timeout, closing of pipe and/or child death."
         when Exception
           @error = response
           break
@@ -469,8 +469,8 @@ private
         when HALT
           break
         when ERROR
-          raise Timeout,
-                "Parent did not respond in a timely fashion. Timeout is set to #{@timeout.inspect} seconds."
+          raise CommunicationError,
+                "Unable to read data from Parent process. Possible timeout, closing of pipe and/or parent death."
         else
           raise UnknownSignal,
                 "Child received unknown signal: #{signal.inspect}"
