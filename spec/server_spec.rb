@@ -2,6 +2,12 @@
 require File.expand_path('../spec_helper', __FILE__)
 
 describe Servolux::Server do
+
+  def pass_until( seconds = 5 )
+    start = Time.now
+    Thread.pass until (Time.now - start) > seconds or yield
+  end
+
   base = Class.new(Servolux::Server) do
     def initialize( &block )
       super('Test Server', :logger => Logging.logger['Servolux'], &block)
@@ -23,17 +29,17 @@ describe Servolux::Server do
     test(?e, @server.pid_file).should be_false
 
     t = Thread.new {@server.startup}
-    Thread.pass until @server.running? and t.status == 'sleep'
+    pass_until { @server.running? and t.status == 'sleep' }
     test(?e, @server.pid_file).should be_true
 
     @server.shutdown
-    Thread.pass until t.status == false
+    pass_until { t.status == false }
     test(?e, @server.pid_file).should be_false
   end
 
   it 'generates a PID file with mode rw-r----- by default' do
     t = Thread.new {@server.startup}
-    Thread.pass until @server.running? and t.status == 'sleep'
+    pass_until { @server.running? and t.status == 'sleep' }
     test(?e, @server.pid_file).should be_true
 
     @log_output.readline.chomp.should be == %q(DEBUG  Servolux : Server "Test Server" creating pid file "test_server.pid")
@@ -41,14 +47,14 @@ describe Servolux::Server do
     (File.stat(@server.pid_file).mode & 0777).should be == 0640
 
     @server.shutdown
-    Thread.pass until t.status == false
+    pass_until { t.status == false }
     test(?e, @server.pid_file).should be_false
   end
 
   it 'generates PID file with the specified permissions' do
     @server.pid_file_mode = 0400
     t = Thread.new {@server.startup}
-    Thread.pass until @server.running? and t.status == 'sleep'
+    pass_until { @server.running? and t.status == 'sleep' }
     test(?e, @server.pid_file).should be_true
 
     @log_output.readline.chomp.should be == %q(DEBUG  Servolux : Server "Test Server" creating pid file "test_server.pid")
@@ -56,19 +62,18 @@ describe Servolux::Server do
     (File.stat(@server.pid_file).mode & 0777).should be == 0400
 
     @server.shutdown
-    Thread.pass until t.status == false
+    pass_until { t.status == false }
     test(?e, @server.pid_file).should be_false
   end
 
   it 'shuts down gracefully when signaled' do
     t = Thread.new {@server.startup}
-    Thread.pass until @server.running? and t.status == 'sleep'
+    pass_until { @server.running? and t.status == 'sleep' }
     @server.should be_running
 
     ENV['TRAVIS'] ? @server.int : Process.kill('INT', $$)
 
-    start = Time.now
-    Thread.pass until t.status == false or (Time.now - start) > 5
+    pass_until { t.status == false }
     @server.should_not be_running
   end
 
@@ -80,7 +85,7 @@ describe Servolux::Server do
     end
 
     t = Thread.new {@server.startup}
-    Thread.pass until @server.running? and t.status == 'sleep'
+    pass_until { @server.running? and t.status == 'sleep' }
     @log_output.readline
 
     Process.kill('USR1', $$)
@@ -93,8 +98,7 @@ describe Servolux::Server do
     @log_output.readline.strip.should be == 'INFO  Servolux : usr2 was called'
 
     ENV['TRAVIS'] ? @server.term : Process.kill('TERM', $$)
-    start = Time.now
-    sleep 0.1 until t.status == false or (Time.now - start) > 5
+    pass_until { t.status == false }
     @server.should_not be_running
   end
 end
