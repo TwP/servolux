@@ -62,12 +62,18 @@ describe Servolux::Server do
 
   it 'shuts down gracefully when signaled' do
     t = Thread.new {@server.startup}
+STDERR.puts "server test #{__LINE__}"
     Thread.pass until @server.running? and t.status == 'sleep'
+STDERR.puts "server test #{__LINE__}"
     @server.should be_running
+STDERR.puts "server test #{__LINE__}"
 
     Process.kill('TERM', $$)
+STDERR.puts "server test #{__LINE__}"
     Thread.pass until t.status == false
+STDERR.puts "server test #{__LINE__}"
     @server.should_not be_running
+STDERR.puts "server test #{__LINE__}"
   end
 
   it 'responds to signals that have defined handlers' do
