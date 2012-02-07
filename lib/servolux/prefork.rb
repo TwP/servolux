@@ -206,9 +206,7 @@ class Servolux::Prefork
   # @return [Prefork] self
   #
   def reap
-    each_worker do |w|
-      w.alive?
-    end
+    @workers.each { |worker| worker.alive? }
     self
   end
 
@@ -241,7 +239,7 @@ class Servolux::Prefork
   #    add_workers( number = 1 )
   #
   # Adds additional workers to the pool. It will not add more workers than
-  # The number set in :max_workers
+  # the number set in :max_workers
   #
   def add_workers( number = 1 )
     number.times do
@@ -267,7 +265,7 @@ class Servolux::Prefork
   # call-seq:
   #   ensure_worker_pool_size()
   #
-  # Make sure that the worker pool as >= the minimum number of workers and less
+  # Make sure that the worker pool has >= the minimum number of workers and less
   # than the maximum number of workers.
   #
   # Generally, this means prune the number of workers and then spawn workers up
