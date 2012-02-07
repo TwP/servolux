@@ -5,7 +5,7 @@ describe Servolux::Server do
 
   def wait_until( seconds = 5 )
     start = Time.now
-    Thread.pass until (Time.now - start) > seconds or yield
+    sleep 0.1 until (Time.now - start) > seconds or yield
   end
 
   base = Class.new(Servolux::Server) do
@@ -88,14 +88,23 @@ describe Servolux::Server do
     @log_output.readline
     @log_output.readline.strip.should be == 'DEBUG  Servolux : Starting'
 
-    `kill -SIGUSR1 #{$$}`; sleep 0.1
-    @log_output.readline.strip.should be == 'INFO  Servolux : usr1 was called'
+    line = nil
+    `kill -SIGUSR1 #{$$}`
+    wait_until { line = @log_output.readline }
+    line.should_not be_nil
+    line.strip.should be == 'INFO  Servolux : usr1 was called'
 
-    `kill -SIGHUP #{$$}`; sleep 0.1
-    @log_output.readline.strip.should be == 'INFO  Servolux : hup was called'
+    line = nil
+    `kill -SIGHUP #{$$}`
+    wait_until { line = @log_output.readline }
+    line.should_not be_nil
+    line.strip.should be == 'INFO  Servolux : hup was called'
 
-    `kill -SIGUSR2 #{$$}`; sleep 0.1
-    @log_output.readline.strip.should be == 'INFO  Servolux : usr2 was called'
+    line = nil
+    `kill -SIGUSR2 #{$$}`
+    wait_until { line = @log_output.readline }
+    line.should_not be_nil
+    line.strip.should be == 'INFO  Servolux : usr2 was called'
 
     `kill -SIGTERM #{$$}`
     wait_until { t.status == false }
