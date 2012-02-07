@@ -81,7 +81,7 @@ describe Servolux::Server do
   it 'responds to signals that have defined handlers' do
     class << @server
       def hup() logger.info 'hup was called'; end
-      def usr1() STDERR.puts 'usr1 was called'; logger.info 'usr1 was called'; end
+      def usr1() logger.info 'usr1 was called'; end
       def usr2() logger.info 'usr2 was called'; end
     end
 
@@ -90,9 +90,8 @@ describe Servolux::Server do
     @log_output.readline
     @log_output.readline.strip.should be == 'DEBUG  Servolux : Starting'
 
-STDERR.puts "my process is #{$$}"
-
-    Process.kill('USR1', $$); sleep 0.2
+    #Process.kill('USR1', $$); sleep 5
+    `kill -SIGUSR1 #{$$}`; sleep 5
     @log_output.readline.strip.should be == 'INFO  Servolux : usr1 was called'
 
     Process.kill('HUP', $$)
