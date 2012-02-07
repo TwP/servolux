@@ -90,6 +90,8 @@ describe Servolux::Server do
     @log_output.readline
     @log_output.readline.strip.should be == 'DEBUG  Servolux : Starting'
 
+STDERR.puts "my process is #{$$}"
+
     Process.kill('USR1', $$); sleep 0.2
     @log_output.readline.strip.should be == 'INFO  Servolux : usr1 was called'
 
