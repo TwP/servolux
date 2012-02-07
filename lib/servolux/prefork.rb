@@ -220,7 +220,7 @@ class Servolux::Prefork
   # @return [Prefork] self
   #
   def signal( signal = 'TERM' )
-    @workers.each { |worker| worker.signal(signal) if worker.alive?; pause }
+    @workers.each { |worker| worker.signal(signal); pause }
     self
   end
   alias :kill :signal

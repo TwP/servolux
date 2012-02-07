@@ -311,6 +311,7 @@ class Servolux::Piper
   #
   def signal( sig )
     return if child?
+    return unless alive?
     sig = Signal.list.invert[sig] if sig.is_a?(Integer)
     Process.kill(sig, @child_pid)
   end
