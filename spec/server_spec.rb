@@ -62,27 +62,14 @@ describe Servolux::Server do
 
   it 'shuts down gracefully when signaled' do
     t = Thread.new {@server.startup}
-STDERR.puts "server test #{__LINE__}"
     Thread.pass until @server.running? and t.status == 'sleep'
-STDERR.puts "server test #{__LINE__}"
     @server.should be_running
-STDERR.puts "server test #{__LINE__}"
 
-    if ENV['TRAVIS']
-STDERR.puts "server test #{__LINE__}"
-      @server.int
-    else
-STDERR.puts "server test #{__LINE__}"
-      Process.kill('INT', $$)
-    end
+    ENV['TRAVIS'] ? @server.int : Process.kill('INT', $$)
 
-STDERR.puts "server test #{__LINE__}"
     start = Time.now
-STDERR.puts "server test #{__LINE__}"
-    sleep 0.1 until t.status == false or (Time.now - start) > 5
-STDERR.puts "server test #{__LINE__}"
+    Thread.pass until t.status == false or (Time.now - start) > 5
     @server.should_not be_running
-STDERR.puts "server test #{__LINE__}"
   end
 
   it 'responds to signals that have defined handlers' do
@@ -105,7 +92,7 @@ STDERR.puts "server test #{__LINE__}"
     Process.kill('USR2', $$)
     @log_output.readline.strip.should be == 'INFO  Servolux : usr2 was called'
 
-    Process.kill('TERM', $$)
+    ENV['TRAVIS'] ? @server.term : Process.kill('TERM', $$)
     start = Time.now
     sleep 0.1 until t.status == false or (Time.now - start) > 5
     @server.should_not be_running
