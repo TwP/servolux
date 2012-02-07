@@ -9,7 +9,7 @@ if Servolux.fork?
 describe Servolux::Prefork do
 
   def pids
-    workers.map! { |w| w.instance_variable_get(:@piper).pid }
+    workers.map! { |w| w.pid }
   end
 
   def workers
@@ -24,9 +24,11 @@ describe Servolux::Prefork do
   end
 
   def alive?( pid )
+    _, cstatus = Process.wait2( pid, Process::WNOHANG )
+    return false if cstatus
     Process.kill(0, pid)
     true
-  rescue Errno::ESRCH, Errno::ENOENT
+  rescue Errno::ESRCH, Errno::ENOENT, Errno::ECHILD
     false
   end
 
