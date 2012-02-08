@@ -138,8 +138,9 @@ class Servolux::Prefork
   HEARTBEAT = "\000<3".freeze    # @private
   # :startdoc:
 
-  attr_accessor :timeout    # Communication timeout in seconds.
-  attr_reader :harvest      # List of child PIDs that need to be reaped
+  attr_accessor :timeout     # Communication timeout in seconds.
+  attr_accessor :min_workers # Minimum number of workers
+  attr_accessor :max_workers # Maximum number of workers
 
   # call-seq:
   #    Prefork.new { block }
@@ -310,6 +311,34 @@ class Servolux::Prefork
     self
   end
 
+  # call-seq:
+  #    worker_counts -> { :alive => 2, :dead => 1 }
+  #
+  # Returns a hash containing the counts of alive and dead workers
+  def worker_counts
+    counts = { :alive => 0, :dead => 0 }
+    each_worker do |worker|
+      state = worker.alive? ? :alive : :dead
+      counts[state] += 1
+    end
+    return counts
+  end
+
+  # call-seq:
+  #    live_worker_count -> Integer
+  #
+  # Returns the number of live workers in the pool
+  def live_worker_count
+    worker_counts[:alive]
+  end
+
+  # call-seq:
+  #    dead_worker_count -> Integer
+  #
+  # Returns the number of dead workers in the pool
+  def dead_worker_count
+    worker_counts[:dead]
+  end
 
 private
 
