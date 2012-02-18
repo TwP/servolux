@@ -1,3 +1,12 @@
+== 0.10.0 / 2012-02-18
+
+* Minor Enhancements
+  * Add in the ability to vary the Prefork worker pool size [issue #8]
+  * Pass original child exception backtrace up the exception chain [issue #7]
+  * Improved child process wellness checks in Piper and Child classes
+* Bug Fixes
+  * Typo and documentation fixes [issue #6]
+
 == 0.9.7 / 2012-01-19
 
 * Minor Enhancements
