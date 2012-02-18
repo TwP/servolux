@@ -71,7 +71,7 @@ describe Servolux::Server do
     wait_until { @server.running? and t.status == 'sleep' }
     @server.should be_running
 
-    `kill -SIGINT #{$$}`
+    Process.kill 'SIGINT', $$
     wait_until { t.status == false }
     @server.should_not be_running
   end
