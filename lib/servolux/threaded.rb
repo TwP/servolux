@@ -282,7 +282,7 @@ module Servolux::Threaded
 
     alias :running? :running
 
-    # Mar the start time of the run loop.
+    # Mark the start time of the run loop.
     #
     def mark_time
       @mark = Time.now if use_strict_interval
