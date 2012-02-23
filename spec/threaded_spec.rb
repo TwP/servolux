@@ -192,7 +192,45 @@ describe Servolux::Threaded do
       obj = base.new
       lambda { obj.maximum_iterations = -1 }.should raise_error( ArgumentError, "maximum iterations must be >= 1" )
     end
-
   end
+
+  # --------------------------------------------------------------------------
+  context 'when running with a strict interval' do
+
+    it "logs a warning if the strict interval is exceeded" do
+      klass = Class.new( base ) do
+        def run() sleep 0.5; end
+      end
+
+      obj = klass.new
+      obj.interval = 0.250
+      obj.use_strict_interval = true
+      obj.maximum_iterations = 2
+
+      obj.start
+      obj.wait
+
+      @log_output.readline
+      @log_output.readline.chomp.should match %r/ WARN  Servolux::Threaded::ThreadContainer : Run time \[\d+\.\d+ s\] exceeded strict interval \[0\.25 s\]/
+    end
+
+    it "ignores the strict flag if the interval is zero" do
+      klass = Class.new( base ) do
+        def run() sleep 0.250; end
+      end
+
+      obj = klass.new
+      obj.interval = 0
+      obj.use_strict_interval = true
+      obj.maximum_iterations = 2
+
+      obj.start
+      obj.wait
+
+      @log_output.readline
+      @log_output.readline.should be_nil
+    end
+  end
+
 end
 

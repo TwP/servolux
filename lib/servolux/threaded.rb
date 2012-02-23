@@ -152,6 +152,27 @@ module Servolux::Threaded
     _activity_thread.interval
   end
 
+  # Signals the activity thread to treat the sleep interval with strict
+  # semantics. The time it takes for the 'run' method to execute will be
+  # subtracted from the sleep interval.
+  #
+  # If the sleep interval is 60 seconds and the 'run' method takes 2.2 seconds
+  # to execute, then the activity thread will sleep for 57.2 seconds. The
+  # subsequent invocation of the 'run' will occur as close as possible to 60
+  # seconds after the previous invocation.
+  #
+  def use_strict_interval=( value )
+    _activity_thread.use_strict_interval = (value ? true : false)
+  end
+
+  # When true, the activity thread will treat the sleep interval with strict
+  # semantics. See the setter method for an in depth explanation.
+  #
+  def use_strict_interval
+    _activity_thread.use_strict_interval
+  end
+  alias :use_strict_interval? :use_strict_interval
+
   # Sets the maximum number of invocations of the threaded object's
   # 'run' method
   #
@@ -199,11 +220,11 @@ module Servolux::Threaded
 
   # :stopdoc:
   def _activity_thread
-    @_activity_thread ||= ::Servolux::Threaded::ThreadContainer.new(60, 0, nil, false);
+    @_activity_thread ||= ::Servolux::Threaded::ThreadContainer.new(60, false, 0, nil, false);
   end  # @private
 
   # @private
-  ThreadContainer = Struct.new( :interval, :iterations, :maximum_iterations, :continue_on_error, :thread, :running ) {
+  ThreadContainer = Struct.new( :interval, :use_strict_interval, :iterations, :maximum_iterations, :continue_on_error, :thread, :running ) {
     def start( threaded )
       self.running = true
       self.iterations = 0
@@ -219,6 +240,7 @@ module Servolux::Threaded
     def run( threaded )
       loop do
         begin
+          mark_time
           break unless running?
           threaded.run
 
@@ -230,7 +252,7 @@ module Servolux::Threaded
             end
           end
 
-          sleep interval if running?
+          sleep if running?
         rescue SystemExit; raise
         rescue Exception => err
           if continue_on_error
@@ -259,6 +281,33 @@ module Servolux::Threaded
     end  # @private
 
     alias :running? :running
+
+    # Mar the start time of the run loop.
+    #
+    def mark_time
+      @mark = Time.now if use_strict_interval
+    end  # @private
+
+    # Sleep for "interval" seconds adjusting for the run time of the "run"
+    # method if the "use_strict_interval" flag is set. If the run time of the
+    # "run" method exceeds our sleep "interval", then log a warning and just
+    # use the interval as normal for this sleep period.
+    #
+    def sleep
+      time_to_sleep = interval
+
+      if use_strict_interval and interval > 0
+        diff = Time.now - @mark
+        time_to_sleep = interval - diff
+
+        if time_to_sleep < 0
+          time_to_sleep = interval
+          logger.warn "Run time [#{diff} s] exceeded strict interval [#{interval} s]"
+        end
+      end
+
+      ::Kernel.sleep time_to_sleep
+    end  # @private
   }
   # :startdoc:
 
