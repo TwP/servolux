@@ -173,6 +173,7 @@ class Servolux::Prefork
     @min_workers = opts.fetch(:min_workers, nil)
     @module = Module.new { define_method :execute, &block } if block
     @workers = []
+    @worker_opts = opts.fetch(:worker_opts, {})
 
     raise ArgumentError, 'No code was given to execute by the workers.' unless @module
   end
@@ -245,7 +246,7 @@ class Servolux::Prefork
   def add_workers( number = 1 )
     number.times do
       break if at_max_workers?
-      worker = Worker.new( self )
+      worker = Worker.new( self, @worker_opts )
       worker.extend @module
       worker.start
       @workers << worker
@@ -364,8 +365,9 @@ private
     #
     # @param [Prefork] prefork The prefork pool that created this worker.
     #
-    def initialize( prefork )
+    def initialize( prefork, opts )
       @timeout = prefork.timeout
+      @opts = opts
       @thread = nil
       @piper = nil
       @error = nil
