@@ -12,7 +12,7 @@ Bones {
   name         'servolux'
   authors      'Tim Pease'
   email        'tim.pease@gmail.com'
-  url          'http://gemcutter.org/gems/servolux'
+  url          'http://rubygems.org/gems/servolux'
   readme_file  'README.rdoc'
   spec.opts << '--color' << '--format documentation'
 
