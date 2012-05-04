@@ -1,4 +1,3 @@
-
 require 'socket'
 
 # == Synopsis
@@ -55,7 +54,7 @@ class Servolux::Piper
   # Creates a new Piper with the child process configured as a daemon. The
   # +pid+ method of the piper returns the PID of the daemon process.
   #
-  # Be default a daemon process will release its current working directory
+  # By default a daemon process will release its current working directory
   # and the stdout/stderr/stdin file descriptors. This allows the parent
   # process to exit cleanly. This behavior can be overridden by setting the
   # _nochdir_ and _noclose_ flags to true. The first will keep the current
