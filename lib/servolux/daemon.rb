@@ -126,7 +126,7 @@ class Servolux::Daemon
   #   still being used by the parent process. This prevents zombie processes.
   #
   # @option opts [Numeric, String, Array<String>, Proc, Method, Servolux::Server] :shutdown_command (nil)
-  #   Assign the startup command. Different calling semantics are used for
+  #   Assign the shutdown command. Different calling semantics are used for
   #   each type of command.
   #
   # @option opts [String] :log_file (nil)
