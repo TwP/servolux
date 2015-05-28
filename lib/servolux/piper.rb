@@ -172,7 +172,7 @@ class Servolux::Piper
   #
   def readable?
     return false if @socket.closed?
-    r,w,e = Kernel.select([@socket], nil, nil, @timeout) rescue nil
+    r,_,_ = Kernel.select([@socket], nil, nil, @timeout) rescue nil
     return !(r.nil? or r.empty?)
   end
 
@@ -183,7 +183,7 @@ class Servolux::Piper
   #
   def writeable?
     return false if @socket.closed?
-    r,w,e = Kernel.select(nil, [@socket], nil, @timeout) rescue nil
+    _,w,_ = Kernel.select(nil, [@socket], nil, @timeout) rescue nil
     return !(w.nil? or w.empty?)
   end
 
