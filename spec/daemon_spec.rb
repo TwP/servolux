@@ -1,12 +1,9 @@
-
 require File.expand_path('../spec_helper', __FILE__)
 require 'logger'
 require 'fileutils'
 
 if Servolux.fork?
-
 describe Servolux::Daemon do
-
   TestServer = Module.new {
     def before_starting() @counter = 0; end
     def after_stopping() exit!(0); end
@@ -35,7 +32,7 @@ describe Servolux::Daemon do
     @daemon = Servolux::Daemon.new(:server => server, :log_file => log_fn, :timeout => 8)
 
     @daemon.startup false
-    @daemon.should be_alive
+    expect(@daemon).to be_alive
   end
 
   it 'waits for a particular line to appear in the log file' do
@@ -44,7 +41,7 @@ describe Servolux::Daemon do
     @daemon = Servolux::Daemon.new(:server => server, :log_file => log_fn, :look_for => 'executing run loop [2]', :timeout => 8)
 
     @daemon.startup false
-    @daemon.should be_alive
+    expect(@daemon).to be_alive
   end
 
   it 'raises an error if the startup timeout is exceeded' do
@@ -52,10 +49,7 @@ describe Servolux::Daemon do
     server.extend TestServer
     @daemon = Servolux::Daemon.new(:server => server, :log_file => log_fn, :look_for => 'executing run loop [42]', :timeout => 4)
 
-    lambda { @daemon.startup }.should raise_error(Servolux::Daemon::Timeout)
+    expect { @daemon.startup }.to raise_error(Servolux::Daemon::Timeout)
   end
-
 end
-
 end  # if Servolux.fork?
-

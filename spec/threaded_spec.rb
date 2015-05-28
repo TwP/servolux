@@ -1,8 +1,6 @@
-
 require File.expand_path('../spec_helper', __FILE__)
 
 describe Servolux::Threaded do
-
   base = Class.new do
     include Servolux::Threaded
     def initialize
@@ -33,14 +31,14 @@ describe Servolux::Threaded do
 
     obj = klass.new
     obj.interval = 0
-    obj.running?.should be_nil
+    expect(obj.running?).to be_nil
 
     obj.start
-    obj.running?.should be_true
+    expect(obj).to be_running
     obj.pass
 
     obj.stop.join(2)
-    obj.running?.should be_false
+    expect(obj).to_not be_running
   end
 
   it "stops even when sleeping in the run method" do
@@ -53,14 +51,14 @@ describe Servolux::Threaded do
 
     obj = klass.new
     obj.interval = 0
-    obj.stopped.should be_nil
+    expect(obj.stopped).to be_nil
 
     obj.start
-    obj.stopped.should be_false
+    expect(obj.stopped).to be false
     obj.pass
 
     obj.stop.join(2)
-    obj.stopped.should be_true
+    expect(obj.stopped).to be true
   end
 
   it "calls all the before and after hooks" do
@@ -78,11 +76,11 @@ describe Servolux::Threaded do
     obj.ary = []
 
     obj.start
-    obj.ary.should be == [1,2]
+    expect(obj.ary).to eq([1,2])
     obj.pass
 
     obj.stop.join(2)
-    obj.ary.should be == [1,2,3,4]
+    expect(obj.ary).to eq([1,2,3,4])
   end
 
   it "dies when an exception is thrown" do
@@ -95,11 +93,11 @@ describe Servolux::Threaded do
     obj.start
     obj.pass nil
 
-    obj.running?.should be_false
+    expect(obj).to_not be_running
     @log_output.readline
-    @log_output.readline.chomp.should be == "FATAL  Object : <RuntimeError> ni"
+    expect(@log_output.readline.chomp).to eq("FATAL  Object : <RuntimeError> ni")
 
-    lambda { obj.join }.should raise_error(RuntimeError, 'ni')
+    expect { obj.join }.to raise_error(RuntimeError, 'ni')
   end
 
   it "lives if told to continue on error" do
@@ -122,12 +120,12 @@ describe Servolux::Threaded do
     obj.start
     obj.wait_signal
 
-    obj.running?.should be_true
+    expect(obj).to be_running
     @log_output.readline
-    @log_output.readline.chomp.should be == "ERROR  Object : <RuntimeError> ni"
+    expect(@log_output.readline.chomp).to eq("ERROR  Object : <RuntimeError> ni")
 
     obj.stop.join(2)
-    obj.running?.should be_false
+    expect(obj).to_not be_running
   end
 
   it "complains loudly if you don't have a run method" do
@@ -136,9 +134,9 @@ describe Servolux::Threaded do
     obj.pass nil
 
     @log_output.readline
-    @log_output.readline.chomp.should be == "FATAL  Object : <NotImplementedError> The run method must be defined by the threaded object."
+    expect(@log_output.readline.chomp).to eq("FATAL  Object : <NotImplementedError> The run method must be defined by the threaded object.")
 
-    lambda { obj.join }.should raise_error(NotImplementedError, 'The run method must be defined by the threaded object.')
+    expect { obj.join }.to raise_error(NotImplementedError, 'The run method must be defined by the threaded object.')
   end
 
   # --------------------------------------------------------------------------
@@ -151,11 +149,11 @@ describe Servolux::Threaded do
 
       obj = klass.new
       obj.maximum_iterations = 5
-      obj.iterations.should be == 0
+      expect(obj.iterations).to eq(0)
 
       obj.start
       obj.wait
-      obj.iterations.should be == 5
+      expect(obj.iterations).to eq(5)
     end
 
     it "runs the 'after_stopping' method" do
@@ -171,7 +169,7 @@ describe Servolux::Threaded do
 
       obj.start
       obj.wait
-      obj.ary.should be == [4]
+      expect(obj.ary).to eq([4])
     end
 
     it "should not increment iterations if maximum iterations has not been set" do
@@ -180,17 +178,17 @@ describe Servolux::Threaded do
       end
 
       obj = klass.new
-      obj.iterations.should be == 0
+      expect(obj.iterations).to eq(0)
 
       obj.start
       sleep 0.1
       obj.stop.join(2)
-      obj.iterations.should be == 0
+      expect(obj.iterations).to eq(0)
     end
 
     it "complains loudly if you attempt to set a maximum number of iterations < 1" do
       obj = base.new
-      lambda { obj.maximum_iterations = -1 }.should raise_error( ArgumentError, "maximum iterations must be >= 1" )
+      expect { obj.maximum_iterations = -1 }.to raise_error( ArgumentError, "maximum iterations must be >= 1" )
     end
   end
 
@@ -211,7 +209,7 @@ describe Servolux::Threaded do
       obj.wait
 
       @log_output.readline
-      @log_output.readline.chomp.should match %r/ WARN  Servolux::Threaded::ThreadContainer : Run time \[\d+\.\d+ s\] exceeded strict interval \[0\.25 s\]/
+      expect(@log_output.readline.chomp).to match(%r/ WARN  Servolux::Threaded::ThreadContainer : Run time \[\d+\.\d+ s\] exceeded strict interval \[0\.25 s\]/)
     end
 
     it "ignores the strict flag if the interval is zero" do
@@ -228,9 +226,7 @@ describe Servolux::Threaded do
       obj.wait
 
       @log_output.readline
-      @log_output.readline.should be_nil
+      expect(@log_output.readline).to be_nil
     end
   end
-
 end
-

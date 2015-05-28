@@ -1,4 +1,3 @@
-
 unless defined? SERVOLUX_SPEC_HELPER
 SERVOLUX_SPEC_HELPER = true
 
@@ -15,6 +14,4 @@ RSpec.configure do |config|
   include RSpec::LoggingHelper
   config.capture_log_messages
 end
-
 end  # unless defined?
-

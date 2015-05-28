@@ -2,7 +2,6 @@
 require File.expand_path('../spec_helper', __FILE__)
 
 describe Servolux::Child do
-
   before :all do
     @child = Servolux::Child.new
   end
@@ -12,22 +11,22 @@ describe Servolux::Child do
   end
 
   it 'has some sensible defaults' do
-    @child.command.should be_nil
-    @child.timeout.should be_nil
-    @child.signals.should be == %w[TERM QUIT KILL]
-    @child.suspend.should be == 4
-    @child.pid.should be_nil
-    @child.io.should be_nil
+    expect(@child.command).to be_nil
+    expect(@child.timeout).to be_nil
+    expect(@child.signals).to eq(%w[TERM QUIT KILL])
+    expect(@child.suspend).to eq(4)
+    expect(@child.pid).to be_nil
+    expect(@child.io).to be_nil
   end
 
   it 'starts a child process' do
     @child.command = 'echo `pwd`'
     @child.start
 
-    @child.pid.should_not be_nil
+    expect(@child.pid).to_not be_nil
     @child.wait
-    @child.io.read.strip.should be == Dir.pwd
-    @child.success?.should be_true
+    expect(@child.io.read.strip).to eq(Dir.pwd)
+    expect(@child.success?).to be true
   end
 
   it 'kills a child process after some timeout' do
@@ -35,16 +34,14 @@ describe Servolux::Child do
     @child.timeout = 0.25
     @child.start
 
-    @child.pid.should_not be_nil
+    expect(@child.pid).to_not be_nil
     @child.wait
 
-    @child.io.read.strip.should be_empty
+    expect(@child.io.read.strip).to be_empty
 
-    @child.signaled?.should be_true
-    @child.exited?.should be_false
-    @child.exitstatus.should be_nil
-    @child.success?.should be_nil
+    expect(@child.signaled?).to be true
+    expect(@child.exited?).to be false
+    expect(@child.exitstatus).to be_nil
+    expect(@child.success?).to be_nil
   end
-
 end
-

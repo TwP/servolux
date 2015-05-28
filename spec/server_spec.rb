@@ -26,54 +26,54 @@ describe Servolux::Server do
   end
 
   it 'generates a PID file' do
-    test(?e, @server.pid_file).should be_false
+    expect(test(?e, @server.pid_file)).to be false
 
     t = Thread.new {@server.startup}
     wait_until { @server.running? and t.status == 'sleep' }
-    test(?e, @server.pid_file).should be_true
+    expect(test(?e, @server.pid_file)).to be true
 
     @server.shutdown
     wait_until { t.status == false }
-    test(?e, @server.pid_file).should be_false
+    expect(test(?e, @server.pid_file)).to be false
   end
 
   it 'generates a PID file with mode rw-r----- by default' do
     t = Thread.new {@server.startup}
     wait_until { @server.running? and t.status == 'sleep' }
-    test(?e, @server.pid_file).should be_true
+    expect(test(?e, @server.pid_file)).to be true
 
-    @log_output.readline.chomp.should be == %q(DEBUG  Servolux : Server "Test Server" creating pid file "test_server.pid")
-    @log_output.readline.chomp.should be == %q(DEBUG  Servolux : Starting)
-    (File.stat(@server.pid_file).mode & 0777).should be == 0640
+    expect(@log_output.readline.chomp).to eq(%q(DEBUG  Servolux : Server "Test Server" creating pid file "test_server.pid"))
+    expect(@log_output.readline.chomp).to eq(%q(DEBUG  Servolux : Starting))
+    expect(File.stat(@server.pid_file).mode & 0777).to eq(0640)
 
     @server.shutdown
     wait_until { t.status == false }
-    test(?e, @server.pid_file).should be_false
+    expect(test(?e, @server.pid_file)).to be false
   end
 
   it 'generates PID file with the specified permissions' do
     @server.pid_file_mode = 0400
     t = Thread.new {@server.startup}
     wait_until { @server.running? and t.status == 'sleep' }
-    test(?e, @server.pid_file).should be_true
+    expect(test(?e, @server.pid_file)).to be true
 
-    @log_output.readline.chomp.should be == %q(DEBUG  Servolux : Server "Test Server" creating pid file "test_server.pid")
-    @log_output.readline.chomp.should be == %q(DEBUG  Servolux : Starting)
-    (File.stat(@server.pid_file).mode & 0777).should be == 0400
+    expect(@log_output.readline.chomp).to eq(%q(DEBUG  Servolux : Server "Test Server" creating pid file "test_server.pid"))
+    expect(@log_output.readline.chomp).to eq(%q(DEBUG  Servolux : Starting))
+    expect(File.stat(@server.pid_file).mode & 0777).to eq(0400)
 
     @server.shutdown
     wait_until { t.status == false }
-    test(?e, @server.pid_file).should be_false
+    expect(test(?e, @server.pid_file)).to be false
   end
 
   it 'shuts down gracefully when signaled' do
     t = Thread.new {@server.startup}
     wait_until { @server.running? and t.status == 'sleep' }
-    @server.should be_running
+    expect(@server).to be_running
 
     `kill -SIGINT #{$$}`
     wait_until { t.status == false }
-    @server.should_not be_running
+    expect(@server).to_not be_running
   end
 
   it 'responds to signals that have defined handlers' do
@@ -86,29 +86,28 @@ describe Servolux::Server do
     t = Thread.new {@server.startup}
     wait_until { @server.running? and t.status == 'sleep' }
     @log_output.readline
-    @log_output.readline.strip.should be == 'DEBUG  Servolux : Starting'
+    expect(@log_output.readline.strip).to eq('DEBUG  Servolux : Starting')
 
     line = nil
     Process.kill 'SIGUSR1', $$
     wait_until { line = @log_output.readline }
-    line.should_not be_nil
-    line.strip.should be == 'INFO  Servolux : usr1 was called'
+    expect(line).to_not be_nil
+    expect(line.strip).to eq('INFO  Servolux : usr1 was called')
 
     line = nil
     Process.kill 'SIGHUP', $$
     wait_until { line = @log_output.readline }
-    line.should_not be_nil
-    line.strip.should be == 'INFO  Servolux : hup was called'
+    expect(line).to_not be_nil
+    expect(line.strip).to eq('INFO  Servolux : hup was called')
 
     line = nil
     Process.kill 'SIGUSR2', $$
     wait_until { line = @log_output.readline }
-    line.should_not be_nil
-    line.strip.should be == 'INFO  Servolux : usr2 was called'
+    expect(line).to_not be_nil
+    expect(line.strip).to eq('INFO  Servolux : usr2 was called')
 
     Process.kill 'SIGTERM', $$
     wait_until { t.status == false }
-    @server.should_not be_running
+    expect(@server).to_not be_running
   end
 end
-

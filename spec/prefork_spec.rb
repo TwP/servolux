@@ -1,13 +1,10 @@
-
 require File.expand_path('../spec_helper', __FILE__)
 require 'tempfile'
 require 'fileutils'
 require 'enumerator'
 
 if Servolux.fork?
-
 describe Servolux::Prefork do
-
   def pids
     workers.map! { |w| w.pid }
   end
@@ -72,8 +69,8 @@ describe Servolux::Prefork do
     sleep 0.1 until worker_count >= 1
 
     ary = Dir.glob(@glob)
-    ary.length.should be == 1
-    File.basename(ary.first).to_i.should be == pids.first
+    expect(ary.length).to eq(1)
+    expect(File.basename(ary.first).to_i).to eq(pids.first)
   end
 
   it "starts up a number of workers" do
@@ -84,10 +81,10 @@ describe Servolux::Prefork do
     sleep 0.250 until worker_count >= 8
 
     ary = Dir.glob(@glob)
-    ary.length.should be == 8
+    expect(ary.length).to eq(8)
 
     ary.map! { |fn| File.basename(fn).to_i }.sort!
-    ary.should be == pids.sort
+    expect(ary).to eq(pids.sort)
   end
 
   it "stops workers gracefullly" do
@@ -98,14 +95,14 @@ describe Servolux::Prefork do
     sleep 0.250 until worker_count >= 3
 
     ary = Dir.glob(@glob)
-    ary.length.should be == 3
+    expect(ary.length).to eq(3)
 
     @prefork.stop
     sleep 0.250 until Dir.glob(@glob).length == 0
     workers.each { |w| w.wait rescue nil }
 
     rv = workers.all? { |w| !w.alive? }
-    rv.should be == true
+    expect(rv).to be true
   end
 
   it "restarts a worker via SIGHUP" do
@@ -120,7 +117,7 @@ describe Servolux::Prefork do
     @prefork.reap until !alive? pid
     sleep 0.250 until ary.all? { |w| w.alive? }
 
-    pid.should_not == pids.last
+    expect(pid).not_to eq(pids.last)
   end
 
   it "starts up a stopped worker" do
@@ -138,7 +135,7 @@ describe Servolux::Prefork do
       worker.start unless worker.alive?
     end
     sleep 0.250 until ary.all? { |w| w.alive? }
-    pid.should_not == pids.last
+    expect(pid).not_to eq(pids.last)
   end
 
   it "adds a new worker to the worker pool" do
@@ -151,7 +148,7 @@ describe Servolux::Prefork do
 
     @prefork.add_workers( 2 )
     sleep 0.250 until worker_count >= 4
-    workers.size.should == 4
+    expect(workers.size).to eq(4)
   end
 
   it "only adds workers up to the max_workers value" do
@@ -163,7 +160,7 @@ describe Servolux::Prefork do
 
     @prefork.add_workers( 2 )
     sleep 0.250 until worker_count >= 3
-    workers.size.should == 3
+    expect(workers.size).to eq(3)
   end
 
   it "prunes workers that are no longer running" do
@@ -175,13 +172,13 @@ describe Servolux::Prefork do
 
     @prefork.add_workers( 2 )
     sleep 0.250 until worker_count >= 3
-    workers.size.should be == 4
+    expect(workers.size).to eq(4)
 
     workers[0].stop
     sleep 0.250 while workers[0].alive?
 
     @prefork.prune_workers
-    workers.size.should be == 3
+    expect(workers.size).to eq(3)
   end
 
   it "ensures that there are minimum number of workers" do
@@ -193,8 +190,7 @@ describe Servolux::Prefork do
 
     @prefork.ensure_worker_pool_size
     sleep 0.250 until worker_count >= 3
-    workers.size.should be == 3
+    expect(workers.size).to eq(3)
   end
 end
 end  # Servolux.fork?
-
