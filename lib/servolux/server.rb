@@ -236,8 +236,12 @@ class Servolux::Server
     self
   end
 
-  alias :int :shutdown     # handles the INT signal
-  alias :term :shutdown    # handles the TERM signal
+  # Handle the TERM signal and call `shutdown` on the server.
+  def term
+    Thread.new { shutdown }
+  end
+
+  alias :int :term      # handles the INT signal
   private :start, :stop
 
   # Returns the PID file name used by the server. If none was given, then

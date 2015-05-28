@@ -1,4 +1,3 @@
-
 module Servolux
 
   # :stopdoc:
