@@ -114,17 +114,15 @@ class PreforkingServerExample < ::Servolux::Server
 
   # Add a worker to the pool when USR1 is received
   def usr1
-    Thread.new {
-      log "Adding a worker"
-      @pool.add_workers
-    }
+    log "Adding a worker"
+    @pool.add_workers
   end
 
   # kill all the current workers with a usr2, the run loop will respawn up to
   # the min_worker count
   #
   def usr2
-    Thread.new { shutdown_workers }
+    shutdown_workers
   end
 
   # By default, Servolux::Server will capture the TERM signal and call its

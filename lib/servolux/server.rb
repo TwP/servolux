@@ -236,12 +236,8 @@ class Servolux::Server
     self
   end
 
-  # Handle the TERM signal and call `shutdown` on the server.
-  def term
-    Thread.new { shutdown }
-  end
-
-  alias :int :term      # handles the INT signal
+  alias :int :shutdown     # handles the INT signal
+  alias :term :shutdown    # handles the TERM signal
   private :start, :stop
 
   # Returns the PID file name used by the server. If none was given, then
@@ -271,9 +267,11 @@ class Servolux::Server
   def trap_signals
     SIGNALS.each do |sig|
       m = sig.downcase.to_sym
-      Signal.trap(sig) { self.send(m) rescue nil } if self.respond_to? m
+      if self.respond_to? m
+        Signal.trap(sig) do
+          Thread.new { self.send(m) rescue nil }
+        end
+      end
     end
   end
-
 end
-
