@@ -190,9 +190,9 @@ class Servolux::Server
     }
 
     begin
+      trap_signals
       create_pid_file
       start
-      trap_signals
       join
       wait_for_shutdown if wait
     ensure
@@ -266,10 +266,19 @@ class Servolux::Server
 
   def trap_signals
     SIGNALS.each do |sig|
-      m = sig.downcase.to_sym
-      Signal.trap(sig) { self.send(m) rescue nil } if self.respond_to? m
+      method = sig.downcase.to_sym
+      if self.respond_to? method
+        Signal.trap(sig) do
+          Thread.new do
+            begin
+              self.send(method)
+            rescue StandardError => err
+              logger.error "Exception in signal handler: #{method}"
+              logger.error err
+            end
+          end
+        end
+      end
     end
   end
-
 end
-
