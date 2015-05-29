@@ -153,7 +153,7 @@ class Servolux::Piper
   # @return [Piper] self
   #
   def close
-    @socket.close rescue nil
+    @socket.close unless @socket.closed?
     self
   end
 
