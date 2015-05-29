@@ -121,7 +121,7 @@ class Servolux::Child
     end
 
     kill if alive?
-    @io.close rescue nil
+    @io.close unless @io.nil? || @io.closed?
     @io = nil
     self
   end
