@@ -25,7 +25,9 @@ module JobProcessor
   # Open a connection to our beanstalk queue. This method is called once just
   # before entering the child run loop.
   def before_executing
-    @beanstalk = Beanstalk::Pool.new(['localhost:11300'])
+    host = config[:host]
+    port = config[:port]
+    @beanstalk = Beanstalk::Pool.new(["#{host}:#{port}"])
   end
 
   # Close the connection to our beanstalk queue. This method is called once
@@ -65,7 +67,13 @@ module JobProcessor
 end
 
 # Create our preforking worker pool. Each worker will run the code found in
-# the JobProcessor module. We set a timeout of 10 minutes. The child process
+# the JobProcessor module.
+#
+# The `:config` Hash is passed to each worker when it is created. The values
+# here are available to the JobProcessor module. We use this config hash to pass
+# the `:host` and `:port` where the beanstalkd server can be found.
+#
+# We set a timeout of 10 minutes for the worker pool. The child process
 # must send a "heartbeat" message to the parent within this timeout period;
 # otherwise, the parent will halt the child process.
 #
@@ -75,7 +83,10 @@ end
 #
 # This also means that if any job processed by a worker takes longer than 10
 # minutes to run, that child worker will be killed.
-pool = Servolux::Prefork.new(:timeout => 600, :module => JobProcessor)
+pool = Servolux::Prefork.new \
+  :timeout => 600,
+  :module => JobProcessor,
+  :config => {:host => '127.0.0.1', :port => 11300}
 
 # Start up 7 child processes to handle jobs
 pool.start 7
