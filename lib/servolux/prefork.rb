@@ -141,6 +141,7 @@ class Servolux::Prefork
   attr_accessor :timeout     # Communication timeout in seconds.
   attr_accessor :min_workers # Minimum number of workers
   attr_accessor :max_workers # Maximum number of workers
+  attr_accessor :config      # Worker configuration options (a Hash)
 
   # call-seq:
   #    Prefork.new { block }
@@ -171,9 +172,9 @@ class Servolux::Prefork
     @module = opts.fetch(:module, nil)
     @max_workers = opts.fetch(:max_workers, nil)
     @min_workers = opts.fetch(:min_workers, nil)
+    @config = opts.fetch(:config, {})
     @module = Module.new { define_method :execute, &block } if block
     @workers = []
-    @worker_opts = opts.fetch(:worker_opts, {})
 
     raise ArgumentError, 'No code was given to execute by the workers.' unless @module
   end
@@ -246,7 +247,7 @@ class Servolux::Prefork
   def add_workers( number = 1 )
     number.times do
       break if at_max_workers?
-      worker = Worker.new( self, @worker_opts )
+      worker = Worker.new(self, @config)
       worker.extend @module
       worker.start
       @workers << worker
@@ -361,13 +362,16 @@ private
 
     attr_reader :error
 
+    attr_reader :config
+
     # Create a new worker that belongs to the _prefork_ pool.
     #
     # @param [Prefork] prefork The prefork pool that created this worker.
+    # @param [Hash] config The worker configuration options.
     #
-    def initialize( prefork, opts )
+    def initialize( prefork, config )
       @timeout = prefork.timeout
-      @opts = opts
+      @config = config
       @thread = nil
       @piper = nil
       @error = nil
