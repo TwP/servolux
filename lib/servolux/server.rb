@@ -266,10 +266,17 @@ class Servolux::Server
 
   def trap_signals
     SIGNALS.each do |sig|
-      m = sig.downcase.to_sym
-      if self.respond_to? m
+      method = sig.downcase.to_sym
+      if self.respond_to? method
         Signal.trap(sig) do
-          Thread.new { self.send(m) rescue nil }
+          Thread.new do
+            begin
+              self.send(method)
+            rescue StandardError => err
+              logger.error "Exception in signal handler: #{method}"
+              logger.error err
+            end
+          end
         end
       end
     end
