@@ -110,4 +110,26 @@ describe Servolux::Server do
     wait_until { t.status == false }
     expect(@server).to_not be_running
   end
+
+  it 'captures exceptions raised by the signal handlers' do
+    class << @server
+      def usr2() raise 'Ooops!'; end
+    end
+
+    t = Thread.new {@server.startup}
+    wait_until { @server.running? and t.status == 'sleep' }
+    @log_output.readline
+    expect(@log_output.readline.strip).to eq('DEBUG  Servolux : Starting')
+
+    line = nil
+    Process.kill 'SIGUSR2', $$
+    wait_until { line = @log_output.readline }
+    expect(line).to_not be_nil
+    expect(line.strip).to eq('ERROR  Servolux : Exception in signal handler: usr2')
+
+    line = nil
+    wait_until { line = @log_output.readline }
+    expect(line).to_not be_nil
+    expect(line.strip).to eq('ERROR  Servolux : <RuntimeError> Ooops!')
+  end
 end
