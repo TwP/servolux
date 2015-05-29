@@ -363,9 +363,9 @@ private
 
     skip = [STDIN, STDOUT, STDERR]
     skip << @piper.socket if @piper
-    ObjectSpace.each_object(IO) { |obj|
-      next if skip.include? obj
-      obj.close rescue nil
+    ObjectSpace.each_object(IO) { |io|
+      next if skip.include? io
+      io.close unless io.closed?
     }
 
     before_exec.call if before_exec.respond_to? :call
