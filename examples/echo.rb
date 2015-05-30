@@ -35,7 +35,7 @@ trap('EXIT') { acceptor.close }
 # Create the worker pool passing in the code to execute in each child
 # process.
 pool = Servolux::Prefork.new {
-  socket, addr = acceptor.accept
+  socket,_ = acceptor.accept
   socket.write "child #$$ echo> "
   socket.flush
   message = socket.gets
