@@ -31,17 +31,17 @@ describe Servolux::Prefork do
 
   before :all do
     tmp = Tempfile.new 'servolux-prefork'
-    @path = path = tmp.path; tmp.unlink
+    @path = tmp.path; tmp.unlink
     @glob = @path + '/*.txt'
     FileUtils.mkdir @path
 
-    @worker = Module.new {
-      define_method(:before_executing) { @fd = File.open(path + "/#$$.txt", 'w') }
+    @worker = Module.new do
+      def before_executing() @fd = File.open("#{config[:path]}/#$$.txt", 'w'); end
       def after_executing() @fd.close; FileUtils.rm_f @fd.path; end
       def execute() @fd.puts Time.now; sleep 2; end
       def hup() @thread.wakeup; end
       alias :term :hup
-    }
+    end
   end
 
   after :all do
@@ -62,7 +62,7 @@ describe Servolux::Prefork do
   end
 
   it "starts up a single worker" do
-    @prefork = Servolux::Prefork.new :module => @worker
+    @prefork = Servolux::Prefork.new :module => @worker, :config => {:path => @path}
     @prefork.start 1
     ary = workers
     sleep 0.1 until ary.all? { |w| w.alive? }
@@ -74,7 +74,7 @@ describe Servolux::Prefork do
   end
 
   it "starts up a number of workers" do
-    @prefork = Servolux::Prefork.new :module => @worker
+    @prefork = Servolux::Prefork.new :module => @worker, :config => {:path => @path}
     @prefork.start 8
     ary = workers
     sleep 0.250 until ary.all? { |w| w.alive? }
@@ -88,7 +88,7 @@ describe Servolux::Prefork do
   end
 
   it "stops workers gracefullly" do
-    @prefork = Servolux::Prefork.new :module => @worker
+    @prefork = Servolux::Prefork.new :module => @worker, :config => {:path => @path}
     @prefork.start 3
     ary = workers
     sleep 0.250 until ary.all? { |w| w.alive? }
@@ -106,7 +106,7 @@ describe Servolux::Prefork do
   end
 
   it "restarts a worker via SIGHUP" do
-    @prefork = Servolux::Prefork.new :module => @worker
+    @prefork = Servolux::Prefork.new :module => @worker, :config => {:path => @path}
     @prefork.start 2
     ary = workers
     sleep 0.250 until ary.all? { |w| w.alive? }
@@ -121,7 +121,7 @@ describe Servolux::Prefork do
   end
 
   it "starts up a stopped worker" do
-    @prefork = Servolux::Prefork.new :module => @worker
+    @prefork = Servolux::Prefork.new :module => @worker, :config => {:path => @path}
     @prefork.start 2
     ary = workers
     sleep 0.250 until ary.all? { |w| w.alive? }
@@ -139,7 +139,7 @@ describe Servolux::Prefork do
   end
 
   it "adds a new worker to the worker pool" do
-    @prefork = Servolux::Prefork.new :module => @worker
+    @prefork = Servolux::Prefork.new :module => @worker, :config => {:path => @path}
     @prefork.start 2
     ary = workers
     sleep 0.250 until ary.all? { |w| w.alive? }
@@ -152,7 +152,7 @@ describe Servolux::Prefork do
   end
 
   it "only adds workers up to the max_workers value" do
-    @prefork = Servolux::Prefork.new :module => @worker, :max_workers => 3
+    @prefork = Servolux::Prefork.new :module => @worker, :max_workers => 3, :config => {:path => @path}
     @prefork.start 2
     ary = workers
     sleep 0.250 until ary.all? { |w| w.alive? }
@@ -164,7 +164,7 @@ describe Servolux::Prefork do
   end
 
   it "prunes workers that are no longer running" do
-    @prefork = Servolux::Prefork.new :module => @worker
+    @prefork = Servolux::Prefork.new :module => @worker, :config => {:path => @path}
     @prefork.start 2
     ary = workers
     sleep 0.250 until ary.all? { |w| w.alive? }
@@ -182,7 +182,7 @@ describe Servolux::Prefork do
   end
 
   it "ensures that there are minimum number of workers" do
-    @prefork = Servolux::Prefork.new :module => @worker, :min_workers => 3
+    @prefork = Servolux::Prefork.new :module => @worker, :min_workers => 3, :config => {:path => @path}
     @prefork.start 1
     ary = workers
     sleep 0.250 until ary.all? { |w| w.alive? }

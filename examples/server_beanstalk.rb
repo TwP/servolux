@@ -32,7 +32,9 @@ module BeanstalkWorkerPool
   # Before we start the server run loop, allocate our pool of child workers
   # and prefork seven JobProcessors to pull work from the beanstalk queue.
   def before_starting
-    @pool = Servolux::Prefork.new(:module => JobProcessor)
+    @pool = Servolux::Prefork.new \
+      :module => JobProcessor,
+      :config => {:host => '127.0.0.1', :port => 11300}
     @pool.start 7
   end
 
@@ -57,7 +59,9 @@ end
 # See the beanstalk.rb example for an explanation of the JobProcessor
 module JobProcessor
   def before_executing
-    @beanstalk = Beanstalk::Pool.new(['localhost:11300'])
+    host = config[:host]
+    port = config[:port]
+    @beanstalk = Beanstalk::Pool.new(["#{host}:#{port}"])
   end
 
   def after_executing
