@@ -8,6 +8,8 @@ class Servolux::PidFile
   #
   # opts - The options Hash
   #   :name - the name of the PID file
+  #   :pid  - the numeric process ID
+  #   :mode - file permissions mode
   #
   def initialize( opts = {} )
     @name = opts.fetch(:name, nil)

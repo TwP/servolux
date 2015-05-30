@@ -15,22 +15,40 @@ describe Servolux::PidFile do
   end
 
   before :each do
-    FileUtils.rm_f "#@path/*.pid"
+    FileUtils.rm_f Dir.glob("#@path/*.pid")
     @pid_file = Servolux::PidFile.new(:name => @filename)
   end
 
   it "creates a PID file" do
     expect(test(?e, @filename)).to be false
-    @pid_file.write(pid: 123456)
 
+    @pid_file.write(pid: 123456)
     expect(test(?e, @filename)).to be true
+
     pid = Integer(File.read(@filename).strip)
     expect(pid).to eq(123456)
   end
 
-  it "generates a PID file with mode rw-r----- by default"
+  it "generates a PID file with mode rw-r----- by default" do
+    expect(test(?e, @filename)).to be false
 
-  it "generates PID file with the specified permissions"
+    @pid_file.write
+    expect(test(?e, @filename)).to be true
+
+    mode = File.stat(@filename).mode & 0777
+    expect(mode).to eq(0640)
+  end
+
+  it "generates PID file with the specified permissions" do
+    @pid_file.mode = 0400
+    expect(test(?e, @filename)).to be false
+
+    @pid_file.write
+    expect(test(?e, @filename)).to be true
+
+    mode = File.stat(@filename).mode & 0777
+    expect(mode).to eq(0400)
+  end
 
   it "removes a PID file"
 
