@@ -35,10 +35,8 @@ module Servolux
   def self.fork?
     RUBY_PLATFORM != 'java' and test(?e, '/dev/null')
   end
-
 end
 
-%w[version threaded server piper daemon child prefork].each do |lib|
+%w[version threaded pid_file server piper daemon child prefork].each do |lib|
   require Servolux.libpath('servolux', lib)
 end
-

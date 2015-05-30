@@ -1,0 +1,2 @@
+class Servolux::PidFile
+end
