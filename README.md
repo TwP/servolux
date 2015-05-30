@@ -46,7 +46,7 @@ All the documentation is available online at http://rdoc.info/projects/TwP/servo
 
 ### Install
 
-  gem install servolux
+    gem install servolux
 
 ### License
 
