@@ -8,14 +8,6 @@ module Servolux
   # Generic Servolux Error class.
   Error = Class.new(StandardError)
 
-  # Returns the version string for the library.
-  #
-  # @return [String]
-  #
-  def self.version
-    @version ||= File.read(path('version.txt')).strip
-  end
-
   # Returns the library path for the module. If any arguments are given,
   # they will be joined to the end of the library path using
   # <tt>File.join</tt>.
@@ -46,7 +38,7 @@ module Servolux
 
 end
 
-%w[threaded server piper daemon child prefork].each do |lib|
+%w[version threaded server piper daemon child prefork].each do |lib|
   require Servolux.libpath('servolux', lib)
 end
 

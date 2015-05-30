@@ -5,6 +5,10 @@ rescue LoadError
   abort '### please install the "bones" gem ###'
 end
 
+lib = File.expand_path('../lib', __FILE__)
+$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+require 'servolux/version'
+
 task :default => 'spec:run'
 task 'gem:release' => 'spec:run'
 
@@ -14,10 +18,9 @@ Bones {
   authors      'Tim Pease'
   email        'tim.pease@gmail.com'
   url          'http://rubygems.org/gems/servolux'
-  readme_file  'README.md'
-  spec.opts << '--color' << '--format documentation'
+  version      Servolux::VERSION
 
-  use_gmail
+  spec.opts << '--color' << '--format documentation'
 
   depend_on  'bones-rspec', '~> 2.0',  :development => true
   depend_on  'bones-git',   '~> 1.3',  :development => true
