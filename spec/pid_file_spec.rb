@@ -6,7 +6,7 @@ describe Servolux::PidFile do
     @path = tmp.path
     tmp.unlink
 
-    @glob = @path + "/*.pid"
+    @filename = "#@path/servolux-test.pid"
     FileUtils.mkdir @path
   end
 
@@ -16,6 +16,27 @@ describe Servolux::PidFile do
 
   before :each do
     FileUtils.rm_f "#@path/*.pid"
-    @pid_file = Servolux::PidFile.new "#{@path}/test.pid"
+    @pid_file = Servolux::PidFile.new(:name => @filename)
   end
+
+  it "creates a PID file" do
+    expect(test(?e, @filename)).to be false
+    @pid_file.write(pid: 123456)
+
+    expect(test(?e, @filename)).to be true
+    pid = Integer(File.read(@filename).strip)
+    expect(pid).to eq(123456)
+  end
+
+  it "generates a PID file with mode rw-r----- by default"
+
+  it "generates PID file with the specified permissions"
+
+  it "removes a PID file"
+
+  it "returns the PID from the file"
+
+  it "sends a signal to the process"
+
+  it "reports if the process is alive"
 end
