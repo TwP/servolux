@@ -37,6 +37,6 @@ module Servolux
   end
 end
 
-%w[version threaded pid_file server piper daemon child prefork].each do |lib|
+%w[version null_logger threaded pid_file server piper daemon child prefork].each do |lib|
   require Servolux.libpath('servolux', lib)
 end
