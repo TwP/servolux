@@ -12,14 +12,12 @@ class Servolux::PidFile
   #   :name   - the name of the program
   #   :path   - path to the PID file location
   #   :mode   - file permissions mode
-  #   :pid    - the numeric process ID
   #   :logger - logger for outputting messages
   #
   def initialize( opts = {} )
     @name   = opts.fetch(:name, $0)
     @path   = opts.fetch(:path, ".")
     @mode   = opts.fetch(:mode, DEFAULT_MODE)
-    @pid    = opts.fetch(:pid, nil)
     @logger = opts.fetch(:logger, Servolux::NullLogger())
 
     yield self if block_given?
@@ -36,45 +34,58 @@ class Servolux::PidFile
   #
   #
   def write( pid = Process.pid )
-    @pid ||= pid
     fn = filename
     logger.debug "Writing pid file #{fn.inspect}"
-    File.open(filename, 'w', mode) { |fd| fd.write(@pid.to_s) }
+    File.open(fn, 'w', mode) { |fd| fd.write(pid.to_s) }
+    fn
   end
 
+  # Delete the PID file if it exists. This method first checks that the current
+  # process PID is the same as the PID stored in the file. If the PIDs do not
+  # match, then this method returns `nil` without taking any action.
   #
-  #
+  # Returns the filename of the deleted file or `nil` if no action was taken.
+  # Raises Errno::EACCESS if you do not have permission to delete the file.
   def delete
-    return unless read_pid == Process.pid
+    return unless pid == Process.pid
     fn = filename
     logger.debug "Deleting pid file #{fn.inspect}"
-    File.delete filename
+    File.delete fn
+    fn
   end
 
+  # Forcibly delete the PID file if it exists. This method does NOT check that
+  # the current process PID against the PID stored in the file.
   #
-  #
+  # Returns the filename of the deleted file or `nil` if no action was taken.
+  # Raises Errno::EACCESS if you do not have permission to delete the file.
   def delete!
     return unless exist?
     fn = filename
     logger.debug "Deleting pid file #{fn.inspect}"
-    File.delete filename
+    File.delete fn
+    fn
   end
 
-  #
-  #
+  # Returns `true` if the PID file exists. Returns `false` otherwise.
   def exist?
     File.exist? filename
   end
 
   # Returns the numeric PID read from the file or `nil` if the file does not
-  # exist.
+  # exist. If you do not have permission to access the file `nil` is returend.
   def pid
-    return @pid unless @pid.nil?
-    read_pid
+    fn = filename
+    Integer(File.read(fn).strip) if File.exist?(fn)
+  rescue Errno::EACCES => err
+    logger.error "You do not have access to the PID file at " \
+                 "#{fn.inspect}: #{err.message}"
+    nil
   end
 
-  #
-  #
+  # Returns `true` if the process is currently running. Returns `false` if this
+  # is not the case. The status of the process is determined by sending signal 0
+  # to the process.
   def alive?
     pid = self.pid
     return if pid.nil?
@@ -85,8 +96,13 @@ class Servolux::PidFile
     false
   end
 
+  # Send a signal the process identified by the PID file. The default signal to
+  # send is 'INT' (2). The signal can be given either as a string or a signal
+  # number.
   #
+  # signal - The signal to send to the process (String or Integer)
   #
+  # Returns an Integer or `nil` if an error was encountered.
   def kill( signal = 'INT' )
     pid = self.pid
     return if pid.nil?
@@ -118,16 +134,6 @@ class Servolux::PidFile
     unless err.is_a?(SystemExit)
       logger.error "Failed to kill PID #{pid} with #{signal}: #{err.message}"
     end
-    nil
-  end
-
-  # Internal:
-  #
-  def read_pid
-    Integer(File.read(filename).strip) if exist?
-  rescue Errno::EACCES => err
-    logger.error "You do not have access to the PID file at " \
-                 "#{filename.inspect}: #{err.message}"
     nil
   end
 end
