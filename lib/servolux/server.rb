@@ -129,12 +129,9 @@ class Servolux::Server
 
   Error = Class.new(::Servolux::Error)
 
-  DEFAULT_PID_FILE_MODE = 0640
-
   attr_reader   :name
   attr_accessor :logger
-  attr_writer   :pid_file
-  attr_accessor :pid_file_mode
+  attr_reader   :pid_file
 
   # call-seq:
   #    Server.new( name, options = {} ) { block }
@@ -153,10 +150,9 @@ class Servolux::Server
     @mutex = Mutex.new
     @shutdown = nil
 
-    self.logger        = opts.fetch(:logger, nil)
-    self.pid_file      = opts.fetch(:pid_file, nil)
-    self.pid_file_mode = opts.fetch(:pid_file_mode, DEFAULT_PID_FILE_MODE)
-    self.interval      = opts.fetch(:interval, 0)
+    self.logger   = opts.fetch(:logger, Servolux::NullLogger())
+    self.interval = opts.fetch(:interval, 0)
+    self.pid_file = opts.fetch(:pid_file, name)
 
     if block
       eg = class << self; self; end
@@ -191,12 +187,12 @@ class Servolux::Server
 
     begin
       trap_signals
-      create_pid_file
+      pid_file.write
       start
       join
       wait_for_shutdown if wait
     ensure
-      delete_pid_file
+      pid_file.delete
     end
     return self
   end
@@ -240,29 +236,28 @@ class Servolux::Server
   alias :term :shutdown    # handles the TERM signal
   private :start, :stop
 
-  # Returns the PID file name used by the server. If none was given, then
-  # the server name is used to create a PID file name.
+  # Set the PID file to the given `value`. If a PidFile instance is given, then
+  # it is used. If a name is given, then that name is used to create a PifFile
+  # instance.
   #
-  def pid_file
-    @pid_file ||= name.downcase.tr(' ','_') + '.pid'
+  # value - The PID file name or a PidFile instance.
+  #
+  # Raises an ArgumentError if the `value` cannot be used as a PID file.
+  def pid_file=( value )
+    @pid_file =
+      case value
+      when Servolux::PidFile
+        value
+      when String
+        path = File.dirname(value)
+        fn = File.basename(value, ".pid")
+        Servolux::PidFile.new(:name => fn, :path => path, :logger => logger)
+      else
+        raise ArgumentError, "#{value.inspect} cannot be used as a PID file"
+      end
   end
 
   private
-
-  def create_pid_file
-    logger.debug "Server #{name.inspect} creating pid file #{pid_file.inspect}"
-    File.open(pid_file, 'w', pid_file_mode) {|fd| fd.write(Process.pid.to_s)}
-  end
-
-  def delete_pid_file
-    if test(?f, pid_file)
-      pid = Integer(File.read(pid_file).strip)
-      return unless pid == Process.pid
-
-      logger.debug "Server #{name.inspect} removing pid file #{pid_file.inspect}"
-      File.delete(pid_file)
-    end
-  end
 
   def trap_signals
     SIGNALS.each do |sig|
