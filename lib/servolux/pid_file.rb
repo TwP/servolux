@@ -7,6 +7,7 @@ class Servolux::PidFile
   attr_accessor :mode     # PID file permissions mode
   attr_accessor :logger   # logger for outputting messages
 
+  # Create a new PID file instance.
   #
   # opts - The options Hash
   #   :name   - the name of the program
@@ -23,16 +24,20 @@ class Servolux::PidFile
     yield self if block_given?
   end
 
-  #
-  #
+  # Returns the full name of the PID file including path and extension.
   def filename
     fn = name.to_s.downcase.tr(" ","_") + ".pid"
     fn = File.join(path, fn) unless path.nil?
     fn
   end
 
+  # Writes the given `pid` to the PID file. The `pid` defaults to the current
+  # process ID.
   #
+  # pid - The process ID to write to the file
   #
+  # Returns the filename of PID file.
+  # Raises Errno::EACCESS if you do not have permission to write the file.
   def write( pid = Process.pid )
     fn = filename
     logger.debug "Writing pid file #{fn.inspect}"
@@ -73,7 +78,7 @@ class Servolux::PidFile
   end
 
   # Returns the numeric PID read from the file or `nil` if the file does not
-  # exist. If you do not have permission to access the file `nil` is returend.
+  # exist. If you do not have permission to access the file `nil` is returned.
   def pid
     fn = filename
     Integer(File.read(fn).strip) if File.exist?(fn)
