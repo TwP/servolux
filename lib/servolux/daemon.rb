@@ -77,7 +77,7 @@ class Servolux::Daemon
 
   attr_accessor :name
   attr_accessor :logger
-  attr_accessor :pid_file
+  attr_reader   :pid_file
   attr_reader   :startup_command
   attr_accessor :shutdown_command
   attr_accessor :timeout
@@ -153,10 +153,10 @@ class Servolux::Daemon
   def initialize( opts = {} )
     @piper = nil
     @logfile_reader = nil
+    @pid_file = nil
 
     self.name     = opts.fetch(:name, nil)
-    self.logger   = opts.fetch(:logger, nil)
-    self.pid_file = opts.fetch(:pid_file, nil)
+    self.logger   = opts.fetch(:logger, Servolux::NullLogger())
     self.startup_command  = opts.fetch(:server, nil) || opts.fetch(:startup_command, nil)
     self.shutdown_command = opts.fetch(:shutdown_command, nil)
     self.timeout  = opts.fetch(:timeout, 30)
@@ -166,6 +166,8 @@ class Servolux::Daemon
     self.look_for = opts.fetch(:look_for, nil)
     self.after_fork  = opts.fetch(:after_fork, nil)
     self.before_exec = opts.fetch(:before_exec, nil)
+
+    self.pid_file = opts.fetch(:pid_file, name) if pid_file.nil?
 
     yield self if block_given?
 
@@ -198,13 +200,34 @@ class Servolux::Daemon
     @startup_command = val
     return unless val.is_a?(::Servolux::Server)
 
-    @name = val.name
-    @logger = val.logger
-    @pid_file = val.pid_file
+    self.name = val.name
+    self.logger = val.logger
+    self.pid_file = val.pid_file
     @shutdown_command = nil
   end
   alias :server= :startup_command=
   alias :server  :startup_command
+
+  # Set the PID file to the given `value`. If a PidFile instance is given, then
+  # it is used. If a name is given, then that name is used to create a PifFile
+  # instance.
+  #
+  # value - The PID file name or a PidFile instance.
+  #
+  # Raises an ArgumentError if the `value` cannot be used as a PID file.
+  def pid_file=( value )
+    @pid_file =
+      case value
+      when Servolux::PidFile
+        value
+      when String
+        path = File.dirname(value)
+        fn = File.basename(value, ".pid")
+        Servolux::PidFile.new(:name => fn, :path => path, :logger => logger)
+      else
+        raise ArgumentError, "#{value.inspect} cannot be used as a PID file"
+      end
+  end
 
   # Assign the log file name. This log file will be monitored to determine
   # if the daemon process is running.
@@ -289,15 +312,7 @@ class Servolux::Daemon
   # @return [Boolean]
   #
   def alive?
-    pid = retrieve_pid
-    Process.kill(0, pid)
-    true
-  rescue Errno::ESRCH, Errno::ENOENT
-    false
-  rescue Errno::EACCES => err
-    logger.error "You do not have access to the PID file at " \
-                 "#{pid_file.inspect}: #{err.message}"
-    false
+    pid_file.alive?
   end
 
   # Send a signal to the daemon process identified by the PID file. The
@@ -309,31 +324,8 @@ class Servolux::Daemon
   # @return [Daemon] self
   #
   def kill( signal = 'INT' )
-    signal = Signal.list.invert[signal] if signal.is_a?(Integer)
-    pid = retrieve_pid
-    logger.info "Killing PID #{pid} with #{signal}"
-    Process.kill(signal, pid)
-    self
-  rescue Errno::EINVAL
-    logger.error "Failed to kill PID #{pid} with #{signal}: " \
-                 "'#{signal}' is an invalid or unsupported signal number."
-  rescue Errno::EPERM
-    logger.error "Failed to kill PID #{pid} with #{signal}: " \
-                 "Insufficient permissions."
-  rescue Errno::ESRCH
-    logger.error "Failed to kill PID #{pid} with #{signal}: " \
-                 "Process is deceased or zombie."
-  rescue Errno::EACCES => err
-    logger.error err.message
-  rescue Errno::ENOENT => err
-    logger.error "Could not find a PID file at #{pid_file.inspect}. " \
-                 "Most likely the process is no longer running."
-  rescue Exception => err
-    unless err.is_a?(SystemExit)
-      logger.error "Failed to kill PID #{pid} with #{signal}: #{err.message}"
-    end
+    pid_file.kill signal
   end
-
 
 private
 
@@ -373,11 +365,7 @@ private
   end
 
   def retrieve_pid
-    @piper ? @piper.pid : Integer(File.read(pid_file).strip)
-  rescue TypeError
-    raise Error, "A PID file was not specified."
-  rescue ArgumentError
-    raise Error, "#{pid_file.inspect} does not contain a valid PID."
+    @piper ? @piper.pid : pid_file.pid
   end
 
   def started?
