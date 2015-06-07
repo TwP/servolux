@@ -130,6 +130,4 @@ describe Servolux::PidFile do
     expect(@pid_file.pid).not_to be_nil
     expect(@pid_file).to be_alive
   end
-
-  it "sends a signal to the process"
 end
