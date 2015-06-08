@@ -8,7 +8,7 @@ by Tim Pease [![](https://secure.travis-ci.org/TwP/servolux.png)](http://travis-
 
 Serv-O-Lux is a collection of Ruby classes that are useful for daemon and
 process management, and for writing your own Ruby services. The code is well
-documented and tested. It works with Ruby and JRuby supporting both 1.8 and 1.9
+documented and tested. It works with Ruby and JRuby supporting 1.9 and 2.0
 interpreters.
 
 ### Features
@@ -41,6 +41,9 @@ process to die if it does not exit in a given amount of time.
 [Servolux::Prefork](http://www.rubydoc.info/github/TwP/servolux/Servolux/Prefork)
 -- provides a pre-forking worker pool for executing tasks in parallel using
 multiple processes.
+
+[Servolux::PidFile](http://www.rubydoc.info/github/TwP/servolux/Servolux/PidFile)
+-- provides PID file management and process signaling and liveness checks.
 
 All the documentation is available online at http://rdoc.info/projects/TwP/servolux
 
