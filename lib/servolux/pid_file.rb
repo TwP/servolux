@@ -1,3 +1,31 @@
+# == Synopsis
+# The PidFile manages the lifecycle of a PID file.
+#
+# == Details
+# A PID file contains the process ID of a given program. This file can be used
+# by the program to indicate that it started successfully. The file can be used
+# programmatically to look up the process ID and send signals to the program.
+# The file can be used to ensure two instances of the same program are not
+# started at the same time.
+#
+# The PidFile class supports creating and deleting PID files. Methods are
+# provided to check if the program associated with the PID is `alive?`. Signals
+# can be sent to the program using the `kill` method.
+#
+# == Examples
+#
+# Here is a simple example creating a PID file in the "/var/run" directory.
+#
+#   pid_file = Servolux::PidFile.new(:name => "test", :path => "/var/run")
+#   pid_file.filename  #=> "/var/run/test.pid"
+#   pid_file.write
+#
+# From another process we can access this PID file and send a `HUP` signal to
+# the program.
+#
+#   pid_file = Servolux::PidFile.new(:name => "test", :path => "/var/run")
+#   pid_file.kill("HUP") if pid_file.alive?
+#
 class Servolux::PidFile
 
   DEFAULT_MODE = 0640
