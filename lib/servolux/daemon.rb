@@ -463,6 +463,4 @@ private
     end
   end
   # :startdoc:
-
 end
-

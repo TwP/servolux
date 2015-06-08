@@ -22,7 +22,7 @@ describe Servolux::Server do
 
   after :each do
     @server.shutdown
-    @server.pid_file.delete
+    @server.wait_for_shutdown
   end
 
   it 'generates a PID file' do
