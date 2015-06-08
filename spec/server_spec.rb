@@ -9,61 +9,67 @@ describe Servolux::Server do
   end
 
   base = Class.new(Servolux::Server) do
-    def initialize( &block )
-      super('Test Server', :logger => Logging.logger['Servolux'], &block)
+    def initialize
+      super('Test Server', :logger => Logging.logger['Servolux'])
     end
     def run() sleep; end
   end
 
   before :each do
     @server = base.new
-    File.delete @server.pid_file if test(?f, @server.pid_file)
+    @server.pid_file.delete
   end
 
   after :each do
     @server.shutdown
-    File.delete @server.pid_file if test(?f, @server.pid_file)
+    @server.wait_for_shutdown
   end
 
   it 'generates a PID file' do
-    expect(test(?e, @server.pid_file)).to be false
+    expect(@server.pid_file).to_not exist
 
     t = Thread.new {@server.startup}
     wait_until { @server.running? and t.status == 'sleep' }
-    expect(test(?e, @server.pid_file)).to be true
+    expect(@server.pid_file).to exist
 
     @server.shutdown
     wait_until { t.status == false }
-    expect(test(?e, @server.pid_file)).to be false
+    expect(@server.pid_file).to_not exist
   end
 
   it 'generates a PID file with mode rw-r----- by default' do
     t = Thread.new {@server.startup}
     wait_until { @server.running? and t.status == 'sleep' }
-    expect(test(?e, @server.pid_file)).to be true
+    expect(@server.pid_file).to exist
 
-    expect(@log_output.readline.chomp).to eq(%q(DEBUG  Servolux : Server "Test Server" creating pid file "test_server.pid"))
+    expect(@log_output.readline.chomp).to eq(%q(DEBUG  Servolux : Writing pid file "./test_server.pid"))
     expect(@log_output.readline.chomp).to eq(%q(DEBUG  Servolux : Starting))
-    expect(File.stat(@server.pid_file).mode & 0777).to eq(0640)
+
+    filename = @server.pid_file.filename
+    mode = File.stat(filename).mode & 0777
+    expect(mode).to eq(0640)
 
     @server.shutdown
     wait_until { t.status == false }
-    expect(test(?e, @server.pid_file)).to be false
+    expect(@server.pid_file).to_not exist
   end
 
   it 'generates PID file with the specified permissions' do
-    @server.pid_file_mode = 0400
+    @server.pid_file.mode = 0400
     t = Thread.new {@server.startup}
     wait_until { @server.running? and t.status == 'sleep' }
-    expect(test(?e, @server.pid_file)).to be true
+    expect(@server.pid_file).to exist
 
-    expect(@log_output.readline.chomp).to eq(%q(DEBUG  Servolux : Server "Test Server" creating pid file "test_server.pid"))
+    expect(@log_output.readline.chomp).to eq(%q(DEBUG  Servolux : Writing pid file "./test_server.pid"))
     expect(@log_output.readline.chomp).to eq(%q(DEBUG  Servolux : Starting))
-    expect(File.stat(@server.pid_file).mode & 0777).to eq(0400)
+
+    filename = @server.pid_file.filename
+    mode = File.stat(filename).mode & 0777
+    expect(mode).to eq(0400)
 
     @server.shutdown
     wait_until { t.status == false }
-    expect(test(?e, @server.pid_file)).to be false
+    expect(@server.pid_file).to_not exist
   end
 
   it 'shuts down gracefully when signaled' do
