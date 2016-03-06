@@ -193,6 +193,7 @@ class Servolux::Server
       wait_for_shutdown if wait
     ensure
       pid_file.delete
+      close_signal_pipe
     end
     return self
   end
@@ -257,12 +258,12 @@ class Servolux::Server
       end
   end
 
-  # This is here for testing only.
-  def signal_pipes
-    [@rd, @wr]
-  end
-
   private
+
+  def close_signal_pipe
+    @rd.close if defined?(@rd) && !@rd.nil? && !@rd.closed?
+    @wr.close if defined?(@wr) && !@wr.nil? && !@wr.closed?
+  end
 
   def trap_signals
     queue = []
@@ -295,6 +296,7 @@ class Servolux::Server
       rescue IO::WaitReadable
         retry
       rescue EOFError, Errno::EBADF
+        logger.info "Signal processing thread has stopped"
         break
       rescue StandardError => err
         logger.error "Exception in signal handler: #{method}"
