@@ -1,3 +1,19 @@
+== 0.12.0 / 2015-06-07
+
+* Minor Enhancements
+  * Adding support for a `PidFile` class [pr #19]
+* Bug Fixes
+
+== 0.11.0 / 2015-05-29
+
+* Minor Enhancements
+  * Fixing server shutdown and signal handling in Ruby 2.0 and up [pr #16]
+  * Improving error handling [pr #17]
+  * Added worker options [pr #18]
+  * Added a `boostrap` script for easier development
+* Bug Fixes
+  * Typo and documentation fixes
+
 == 0.10.0 / 2012-02-18
 
 * Minor Enhancements

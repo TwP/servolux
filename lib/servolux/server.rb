@@ -257,23 +257,49 @@ class Servolux::Server
       end
   end
 
+  # This is here for testing only.
+  def signal_pipes
+    [@rd, @wr]
+  end
+
   private
 
   def trap_signals
+    queue = []
+    @rd, @wr = IO.pipe
+
     SIGNALS.each do |sig|
       method = sig.downcase.to_sym
       if self.respond_to? method
         Signal.trap(sig) do
-          Thread.new do
-            begin
-              self.send(method)
-            rescue StandardError => err
-              logger.error "Exception in signal handler: #{method}"
-              logger.error err
-            end
+          begin
+            queue << method
+            @wr.write_nonblock("!")
+          rescue StandardError => err
+            logger.error "Exception in signal handler: #{method}"
+            logger.error err
           end
         end
       end
     end
+
+    Thread.new { loop {
+      begin
+        IO.select([@rd])
+        @rd.read_nonblock(1)
+
+        method = queue.shift
+        next if method.nil?
+
+        self.send(method)
+      rescue IO::WaitReadable
+        retry
+      rescue EOFError, Errno::EBADF
+        break
+      rescue StandardError => err
+        logger.error "Exception in signal handler: #{method}"
+        logger.error err
+      end
+    }}
   end
 end
