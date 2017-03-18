@@ -21,7 +21,7 @@ describe Servolux::Prefork do
   end
 
   def alive?( pid )
-    _, cstatus = Process.wait2( pid, Process::WNOHANG )
+    _, cstatus = Process.wait2(pid, Process::WNOHANG|Process::WUNTRACED)
     return false if cstatus
     Process.kill(0, pid)
     true

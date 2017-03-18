@@ -358,7 +358,7 @@ class Servolux::Piper
     wait(Process::WNOHANG|Process::WUNTRACED)
     Process.kill(0, @child_pid)
     true
-  rescue Errno::ESRCH, Errno::ENOENT
+  rescue Errno::ESRCH, Errno::ENOENT, Errno::ECHILD
     false
   end
 
