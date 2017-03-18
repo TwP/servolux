@@ -29,6 +29,11 @@ describe Servolux::Prefork do
     false
   end
 
+  def wait_until( seconds = 5 )
+    start = Time.now
+    sleep 0.250 until (Time.now - start) > seconds or yield
+  end
+
   before :all do
     tmp = Tempfile.new 'servolux-prefork'
     @path = tmp.path; tmp.unlink
@@ -65,8 +70,8 @@ describe Servolux::Prefork do
     @prefork = Servolux::Prefork.new :module => @worker, :config => {:path => @path}
     @prefork.start 1
     ary = workers
-    sleep 0.1 until ary.all? { |w| w.alive? }
-    sleep 0.1 until worker_count >= 1
+    wait_until { ary.all? { |w| w.alive? } }
+    wait_until { worker_count >= 1 }
 
     ary = Dir.glob(@glob)
     expect(ary.length).to eq(1)
@@ -77,8 +82,8 @@ describe Servolux::Prefork do
     @prefork = Servolux::Prefork.new :module => @worker, :config => {:path => @path}
     @prefork.start 8
     ary = workers
-    sleep 0.250 until ary.all? { |w| w.alive? }
-    sleep 0.250 until worker_count >= 8
+    wait_until { ary.all? { |w| w.alive? } }
+    wait_until { worker_count >= 8 }
 
     ary = Dir.glob(@glob)
     expect(ary.length).to eq(8)
@@ -91,14 +96,14 @@ describe Servolux::Prefork do
     @prefork = Servolux::Prefork.new :module => @worker, :config => {:path => @path}
     @prefork.start 3
     ary = workers
-    sleep 0.250 until ary.all? { |w| w.alive? }
-    sleep 0.250 until worker_count >= 3
+    wait_until { ary.all? { |w| w.alive? } }
+    wait_until { worker_count >= 3 }
 
     ary = Dir.glob(@glob)
     expect(ary.length).to eq(3)
 
     @prefork.stop
-    sleep 0.250 until Dir.glob(@glob).length == 0
+    wait_until { Dir.glob(@glob).length == 0 }
     workers.each { |w| w.wait rescue nil }
 
     rv = workers.all? { |w| !w.alive? }
@@ -109,13 +114,13 @@ describe Servolux::Prefork do
     @prefork = Servolux::Prefork.new :module => @worker, :config => {:path => @path}
     @prefork.start 2
     ary = workers
-    sleep 0.250 until ary.all? { |w| w.alive? }
-    sleep 0.250 until worker_count >= 2
+    wait_until { ary.all? { |w| w.alive? } }
+    wait_until { worker_count >= 2 }
 
     pid = pids.last
     ary.last.signal 'HUP'
     @prefork.reap until !alive? pid
-    sleep 0.250 until ary.all? { |w| w.alive? }
+    wait_until { ary.all? { |w| w.alive? } }
 
     expect(pid).not_to eq(pids.last)
   end
@@ -124,8 +129,8 @@ describe Servolux::Prefork do
     @prefork = Servolux::Prefork.new :module => @worker, :config => {:path => @path}
     @prefork.start 2
     ary = workers
-    sleep 0.250 until ary.all? { |w| w.alive? }
-    sleep 0.250 until worker_count >= 2
+    wait_until { ary.all? { |w| w.alive? } }
+    wait_until { worker_count >= 2 }
 
     pid = pids.last
     ary.last.signal 'TERM'
@@ -134,7 +139,7 @@ describe Servolux::Prefork do
     @prefork.each_worker do |worker|
       worker.start unless worker.alive?
     end
-    sleep 0.250 until ary.all? { |w| w.alive? }
+    wait_until { ary.all? { |w| w.alive? } }
     expect(pid).not_to eq(pids.last)
   end
 
@@ -142,12 +147,12 @@ describe Servolux::Prefork do
     @prefork = Servolux::Prefork.new :module => @worker, :config => {:path => @path}
     @prefork.start 2
     ary = workers
-    sleep 0.250 until ary.all? { |w| w.alive? }
-    sleep 0.250 until worker_count >= 2
+    wait_until { ary.all? { |w| w.alive? } }
+    wait_until { worker_count >= 2 }
 
 
     @prefork.add_workers( 2 )
-    sleep 0.250 until worker_count >= 4
+    wait_until { worker_count >= 4 }
     expect(workers.size).to eq(4)
   end
 
@@ -155,11 +160,11 @@ describe Servolux::Prefork do
     @prefork = Servolux::Prefork.new :module => @worker, :max_workers => 3, :config => {:path => @path}
     @prefork.start 2
     ary = workers
-    sleep 0.250 until ary.all? { |w| w.alive? }
-    sleep 0.250 until worker_count >= 2
+    wait_until { ary.all? { |w| w.alive? } }
+    wait_until { worker_count >= 2 }
 
     @prefork.add_workers( 2 )
-    sleep 0.250 until worker_count >= 3
+    wait_until { worker_count >= 3 }
     expect(workers.size).to eq(3)
   end
 
@@ -167,15 +172,15 @@ describe Servolux::Prefork do
     @prefork = Servolux::Prefork.new :module => @worker, :config => {:path => @path}
     @prefork.start 2
     ary = workers
-    sleep 0.250 until ary.all? { |w| w.alive? }
-    sleep 0.250 until worker_count >= 2
+    wait_until { ary.all? { |w| w.alive? } }
+    wait_until { worker_count >= 2 }
 
     @prefork.add_workers( 2 )
-    sleep 0.250 until worker_count >= 3
+    wait_until { worker_count >= 3 }
     expect(workers.size).to eq(4)
 
     workers[0].stop
-    sleep 0.250 while workers[0].alive?
+    wait_until { !workers[0].alive? }
 
     @prefork.prune_workers
     expect(workers.size).to eq(3)
@@ -185,11 +190,11 @@ describe Servolux::Prefork do
     @prefork = Servolux::Prefork.new :module => @worker, :min_workers => 3, :config => {:path => @path}
     @prefork.start 1
     ary = workers
-    sleep 0.250 until ary.all? { |w| w.alive? }
-    sleep 0.250 until worker_count >= 1
+    wait_until { ary.all? { |w| w.alive? } }
+    wait_until { worker_count >= 1 }
 
     @prefork.ensure_worker_pool_size
-    sleep 0.250 until worker_count >= 3
+    wait_until { worker_count >= 3 }
     expect(workers.size).to eq(3)
   end
 end
