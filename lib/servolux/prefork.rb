@@ -441,7 +441,9 @@ private
     #
     def alive?
       return if @piper.nil?
-      @piper.alive?
+      return true if @piper.alive?
+      @piper = nil
+      false
     end
 
     # Returns +true+ if communication with the child process timed out.
