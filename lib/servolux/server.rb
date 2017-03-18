@@ -193,7 +193,7 @@ class Servolux::Server
       wait_for_shutdown if wait
     ensure
       pid_file.delete
-      close_signal_pipe
+      halt_signal_processing
     end
     return self
   end
@@ -260,16 +260,16 @@ class Servolux::Server
 
   private
 
-  def close_signal_pipe
+  def halt_signal_processing
     if defined?(@wr) && !@wr.nil? && !@wr.closed?
-      @wr.write_nonblock("!")
-      @wr.close
+      @queue << :halt
+      @wr.write("!")
+      @wr.flush
     end
-    @rd.close if defined?(@rd) && !@rd.nil? && !@rd.closed?
   end
 
   def trap_signals
-    queue = []
+    @queue = []
     @rd, @wr = IO.pipe
 
     SIGNALS.each do |sig|
@@ -277,7 +277,7 @@ class Servolux::Server
       if self.respond_to? method
         Signal.trap(sig) do
           begin
-            queue << method
+            @queue << method
             @wr.write_nonblock("!")
           rescue StandardError => err
             logger.error "Exception in signal handler: #{method}"
@@ -287,24 +287,33 @@ class Servolux::Server
       end
     end
 
-    Thread.new { loop {
-      begin
-        IO.select([@rd])
-        @rd.read_nonblock(1)
+    Thread.new {
+      :run while process_signals
+      @rd.close if !@rd.nil? && !@rd.closed?
+      @wr.close if !@wr.nil? && !@wr.closed?
+      logger.info "Signal processing thread has stopped"
+    }
+  end
 
-        method = queue.shift
-        next if method.nil?
+  def process_signals
+    IO.select([@rd])
+    @rd.read_nonblock(42)
 
-        self.send(method)
-      rescue IO::WaitReadable
-        retry
-      rescue IOError, EOFError, Errno::EBADF
-        logger.info "Signal processing thread has stopped"
-        break
-      rescue StandardError => err
-        logger.error "Exception in signal handler: #{method}"
-        logger.error err
-      end
-    }}
+    while !@queue.empty?
+      method = @queue.shift
+      next if method.nil?
+      return false if method == :halt
+
+      self.send(method)
+    end
+    return true
+  rescue IO::WaitReadable
+    return true
+  rescue IOError, EOFError, Errno::EBADF
+    return false
+  rescue StandardError => err
+    logger.error "Exception in signal handler: #{method}"
+    logger.error err
+    return false
   end
 end

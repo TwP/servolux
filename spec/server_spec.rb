@@ -155,7 +155,7 @@ describe Servolux::Server do
     expect(readlog.strip).to eq('DEBUG  Servolux : Starting')
 
     line = nil
-    @server.__send__(:close_signal_pipe)
+    @server.__send__(:halt_signal_processing)
     wait_until { line = readlog }
     expect(line).to_not be_nil
     expect(line.strip).to eq('INFO  Servolux : Signal processing thread has stopped')
