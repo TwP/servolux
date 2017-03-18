@@ -261,8 +261,11 @@ class Servolux::Server
   private
 
   def close_signal_pipe
+    if defined?(@wr) && !@wr.nil? && !@wr.closed?
+      @wr.write_nonblock("!")
+      @wr.close
+    end
     @rd.close if defined?(@rd) && !@rd.nil? && !@rd.closed?
-    @wr.close if defined?(@wr) && !@wr.nil? && !@wr.closed?
   end
 
   def trap_signals
@@ -295,7 +298,7 @@ class Servolux::Server
         self.send(method)
       rescue IO::WaitReadable
         retry
-      rescue EOFError, Errno::EBADF
+      rescue IOError, EOFError, Errno::EBADF
         logger.info "Signal processing thread has stopped"
         break
       rescue StandardError => err
