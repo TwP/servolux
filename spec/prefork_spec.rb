@@ -31,7 +31,7 @@ describe Servolux::Prefork do
 
   def wait_until( seconds = 5 )
     start = Time.now
-    sleep 0.250 until (Time.now - start) > seconds or yield
+    sleep 0.250 until ((Time.now - start) > seconds) || yield
   end
 
   before :all do
