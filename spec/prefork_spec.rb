@@ -21,8 +21,6 @@ describe Servolux::Prefork do
   end
 
   def alive?( pid )
-    _, cstatus = Process.wait2(pid, Process::WNOHANG|Process::WUNTRACED)
-    return false if cstatus
     Process.kill(0, pid)
     true
   rescue Errno::ESRCH, Errno::ENOENT, Errno::ECHILD
@@ -119,7 +117,8 @@ describe Servolux::Prefork do
 
     pid = pids.last
     ary.last.signal 'HUP'
-    @prefork.reap until !alive? pid
+    wait_until { !alive? pid }
+    @prefork.reap
     wait_until { ary.all? { |w| w.alive? } }
 
     expect(pid).not_to eq(pids.last)
@@ -143,7 +142,9 @@ STDOUT.puts "#{__FILE__}: #{__LINE__}"
     ary.last.signal 'TERM'
 STDOUT.puts "#{__FILE__}: #{__LINE__}"
 
-    @prefork.reap until !alive? pid
+    wait_until { !alive? pid }
+STDOUT.puts "#{__FILE__}: #{__LINE__}"
+    @prefork.reap
 STDOUT.puts "#{__FILE__}: #{__LINE__}"
     @prefork.each_worker do |worker|
       worker.start unless worker.alive?
