@@ -261,7 +261,7 @@ class Servolux::Prefork
   # Remove workers that are no longer alive from the worker pool
   #
   def prune_workers
-    new_workers = @workers.find_all { |w| w.alive? }
+    new_workers = @workers.find_all { |w| w.reap.alive? }
     @workers = new_workers
   end
 
