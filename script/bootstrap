@@ -2,7 +2,7 @@
 
 gem list -i bones >/dev/null 2>&1
 rc=$?
-if [[ $rc != 0 ]]; then
+if [ "$rc" != "0" ]; then
   gem install bones
 fi
 

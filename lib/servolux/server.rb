@@ -193,6 +193,7 @@ class Servolux::Server
       wait_for_shutdown if wait
     ensure
       pid_file.delete
+      halt_signal_processing
     end
     return self
   end
@@ -259,21 +260,60 @@ class Servolux::Server
 
   private
 
+  def halt_signal_processing
+    if defined?(@wr) && !@wr.nil? && !@wr.closed?
+      @queue << :halt
+      @wr.write("!")
+      @wr.flush
+    end
+  end
+
   def trap_signals
+    @queue = []
+    @rd, @wr = IO.pipe
+
     SIGNALS.each do |sig|
       method = sig.downcase.to_sym
       if self.respond_to? method
         Signal.trap(sig) do
-          Thread.new do
-            begin
-              self.send(method)
-            rescue StandardError => err
-              logger.error "Exception in signal handler: #{method}"
-              logger.error err
-            end
+          begin
+            @queue << method
+            @wr.write_nonblock("!")
+          rescue StandardError => err
+            logger.error "Exception in signal handler: #{method}"
+            logger.error err
           end
         end
       end
     end
+
+    Thread.new {
+      :run while process_signals
+      @rd.close if !@rd.nil? && !@rd.closed?
+      @wr.close if !@wr.nil? && !@wr.closed?
+      logger.info "Signal processing thread has stopped"
+    }
+  end
+
+  def process_signals
+    IO.select([@rd])
+    @rd.read_nonblock(42)
+
+    while !@queue.empty?
+      method = @queue.shift
+      next if method.nil?
+      return false if method == :halt
+
+      self.send(method)
+    end
+    return true
+  rescue IO::WaitReadable
+    return true
+  rescue IOError, EOFError, Errno::EBADF
+    return false
+  rescue StandardError => err
+    logger.error "Exception in signal handler: #{method}"
+    logger.error err
+    return false
   end
 end

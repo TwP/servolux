@@ -15,6 +15,7 @@ announcement.txt
 coverage
 doc
 pkg
+tags
 .yardoc
 .rvmrc
 vendor

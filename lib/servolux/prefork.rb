@@ -209,7 +209,7 @@ class Servolux::Prefork
   # @return [Prefork] self
   #
   def reap
-    @workers.each { |worker| worker.alive? }
+    @workers.each { |worker| worker.reap }
     self
   end
 
@@ -261,7 +261,7 @@ class Servolux::Prefork
   # Remove workers that are no longer alive from the worker pool
   #
   def prune_workers
-    new_workers = @workers.find_all { |w| w.alive? }
+    new_workers = @workers.find_all { |w| w.reap.alive? }
     @workers = new_workers
   end
 
@@ -375,6 +375,7 @@ private
       @thread = nil
       @piper = nil
       @error = nil
+      @pid_list = []
     end
 
     # Start this worker. A new process will be forked, and the code supplied
@@ -383,6 +384,7 @@ private
     # @return [Worker] self
     #
     def start
+      @pid_list << @piper.pid if @piper
       @error = nil
       @piper = ::Servolux::Piper.new('rw', :timeout => @timeout)
       @piper.parent? ? parent : child
@@ -414,7 +416,7 @@ private
     #
     def wait
       return if @piper.nil? or @piper.child?
-      @piper.wait(Process::WNOHANG|Process::WUNTRACED)
+      @piper.wait(Process::WUNTRACED)
     end
 
     # Send this given _signal_ to the child process. The default signal is
@@ -442,6 +444,31 @@ private
     def alive?
       return if @piper.nil?
       @piper.alive?
+    end
+
+    # Internal: Attempt to reap any child processes spawned by this worker. If a
+    # child has exited, then we remove it from our PID list.
+    #
+    # @return [Worker] this worker instance.
+    def reap
+      @piper.alive? unless @piper.nil?
+      @pid_list.dup.each do |pid|
+        @pid_list.delete(pid) if reap?(pid)
+      end
+      self
+    end
+
+    # Internal: Check the return status of the given child PID. This will reap
+    # the process from the kernel process table if the child has exited.
+    #
+    # @return [Boolean] true if the PID has exited; false otherwise.
+    def reap?(pid)
+      _, cstatus = Process.wait2(pid, Process::WNOHANG|Process::WUNTRACED)
+      return true if cstatus
+      Process.kill(0, pid)
+      false
+    rescue Errno::ESRCH, Errno::ENOENT, Errno::ECHILD
+      true
     end
 
     # Returns +true+ if communication with the child process timed out.
