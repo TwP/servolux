@@ -149,7 +149,7 @@ class Servolux::Child
   #   the child process is not running.
   #
   def wait( flags = 0 )
-    return if @io.nil?
+    return if @pid.nil?
     _, @status = Process.wait2(@pid, flags) unless @status
     exitstatus
   end
@@ -160,7 +160,7 @@ class Servolux::Child
   # @return [Boolean]
   #
   def alive?
-    return if @io.nil?
+    return if @pid.nil?
     wait(Process::WNOHANG|Process::WUNTRACED)
     Process.kill(0, @pid)
     true

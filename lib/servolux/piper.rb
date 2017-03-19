@@ -69,7 +69,9 @@ class Servolux::Piper
     piper.parent {
       pid = piper.gets
       raise ::Servolux::Error, 'Could not get the child PID.' if pid.nil?
-      piper.instance_variable_set(:@child_pid, pid)
+
+      piper.wait                                     # reap the child process
+      piper.instance_variable_set(:@child_pid, pid)  # adopt the grandchild
     }
     piper.child {
       Process.setsid                     # Become session leader.
