@@ -125,36 +125,23 @@ describe Servolux::Prefork do
   end
 
   it "starts up a stopped worker" do
-STDOUT.puts "#"*5
     @prefork = Servolux::Prefork.new :module => @worker, :config => {:path => @path}
-STDOUT.puts "#{__FILE__}: #{__LINE__}"
     @prefork.start 2
-STDOUT.puts "#{__FILE__}: #{__LINE__}"
     ary = workers
-STDOUT.puts "#{__FILE__}: #{__LINE__}"
     wait_until { ary.all? { |w| w.alive? } }
-STDOUT.puts "#{__FILE__}: #{__LINE__}"
     wait_until { worker_count >= 2 }
-STDOUT.puts "#{__FILE__}: #{__LINE__}"
 
     pid = pids.last
-STDOUT.puts "#{__FILE__}: #{__LINE__}"
     ary.last.signal 'TERM'
-STDOUT.puts "#{__FILE__}: #{__LINE__}"
 
     wait_until { !alive? pid }
-STDOUT.puts "#{__FILE__}: #{__LINE__}"
     @prefork.reap
-STDOUT.puts "#{__FILE__}: #{__LINE__}"
+
     @prefork.each_worker do |worker|
       worker.start unless worker.alive?
     end
-STDOUT.puts "#{__FILE__}: #{__LINE__}"
     wait_until { ary.all? { |w| w.alive? } }
-STDOUT.puts "#{__FILE__}: #{__LINE__}"
     expect(pid).not_to eq(pids.last)
-STDOUT.puts "#{__FILE__}: #{__LINE__}"
-STDOUT.puts "#"*5
   end
 
   it "adds a new worker to the worker pool" do
